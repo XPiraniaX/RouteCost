@@ -10,6 +10,10 @@ import pl.routecost.user.exception.InvalidCredentialsException;
 import pl.routecost.user.exception.PasswordTooLongException;
 import pl.routecost.fuel.exception.FuelEntryChronologyException;
 import pl.routecost.fuel.exception.FuelEntryNotFoundException;
+import pl.routecost.expense.exception.ExpenseChronologyException;
+import pl.routecost.expense.exception.ExpenseDateRangeException;
+import pl.routecost.expense.exception.ExpenseNotFoundException;
+import pl.routecost.expense.exception.InvalidExpenseCurrencyException;
 import pl.routecost.vehicle.exception.OdometerRollbackException;
 import pl.routecost.vehicle.exception.VehicleNotFoundException;
 
@@ -68,6 +72,35 @@ public class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(
                 HttpStatus.BAD_REQUEST,
                 "Fuel entries must not predate vehicle purchase or move the odometer backwards in date order."
+        );
+    }
+
+    @ExceptionHandler(ExpenseNotFoundException.class)
+    ProblemDetail handleExpenseNotFound(ExpenseNotFoundException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Expense was not found.");
+    }
+
+    @ExceptionHandler(ExpenseChronologyException.class)
+    ProblemDetail handleExpenseChronology(ExpenseChronologyException exception) {
+        return ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "Expense date or odometer conflicts with the vehicle's recorded history."
+        );
+    }
+
+    @ExceptionHandler(ExpenseDateRangeException.class)
+    ProblemDetail handleExpenseDateRange(ExpenseDateRangeException exception) {
+        return ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "The start date must not be after the end date."
+        );
+    }
+
+    @ExceptionHandler(InvalidExpenseCurrencyException.class)
+    ProblemDetail handleInvalidExpenseCurrency(InvalidExpenseCurrencyException exception) {
+        return ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "Currency must be a supported ISO 4217 currency code."
         );
     }
 
