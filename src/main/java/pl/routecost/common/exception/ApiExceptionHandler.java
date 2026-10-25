@@ -16,6 +16,10 @@ import pl.routecost.expense.exception.ExpenseNotFoundException;
 import pl.routecost.expense.exception.InvalidExpenseCurrencyException;
 import pl.routecost.vehicle.exception.OdometerRollbackException;
 import pl.routecost.vehicle.exception.VehicleNotFoundException;
+import pl.routecost.reminder.exception.InvalidReminderStatusTransitionException;
+import pl.routecost.reminder.exception.ReminderChronologyException;
+import pl.routecost.reminder.exception.ReminderDateRangeException;
+import pl.routecost.reminder.exception.ReminderNotFoundException;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -101,6 +105,35 @@ public class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(
                 HttpStatus.BAD_REQUEST,
                 "Currency must be a supported ISO 4217 currency code."
+        );
+    }
+
+    @ExceptionHandler(ReminderNotFoundException.class)
+    ProblemDetail handleReminderNotFound(ReminderNotFoundException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Reminder was not found.");
+    }
+
+    @ExceptionHandler(ReminderDateRangeException.class)
+    ProblemDetail handleReminderDateRange(ReminderDateRangeException exception) {
+        return ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "The due date start must not be after the due date end."
+        );
+    }
+
+    @ExceptionHandler(ReminderChronologyException.class)
+    ProblemDetail handleReminderChronology(ReminderChronologyException exception) {
+        return ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "Reminder due date must not precede the vehicle purchase date."
+        );
+    }
+
+    @ExceptionHandler(InvalidReminderStatusTransitionException.class)
+    ProblemDetail handleInvalidReminderStatusTransition(InvalidReminderStatusTransitionException exception) {
+        return ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                "This reminder status transition is not allowed. Use the explicit reactivate operation to reactivate it."
         );
     }
 
