@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import pl.routecost.user.exception.EmailAlreadyRegisteredException;
 import pl.routecost.user.exception.InvalidCredentialsException;
 import pl.routecost.user.exception.PasswordTooLongException;
+import pl.routecost.fuel.exception.FuelEntryChronologyException;
+import pl.routecost.fuel.exception.FuelEntryNotFoundException;
 import pl.routecost.vehicle.exception.OdometerRollbackException;
 import pl.routecost.vehicle.exception.VehicleNotFoundException;
 
@@ -53,6 +55,19 @@ public class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(
                 HttpStatus.BAD_REQUEST,
                 "Odometer cannot be lower than the last recorded vehicle mileage."
+        );
+    }
+
+    @ExceptionHandler(FuelEntryNotFoundException.class)
+    ProblemDetail handleFuelEntryNotFound(FuelEntryNotFoundException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Fuel entry was not found.");
+    }
+
+    @ExceptionHandler(FuelEntryChronologyException.class)
+    ProblemDetail handleFuelEntryChronology(FuelEntryChronologyException exception) {
+        return ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "Fuel entries must not predate vehicle purchase or move the odometer backwards in date order."
         );
     }
 
