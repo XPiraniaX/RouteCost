@@ -32,18 +32,15 @@ public class ExpenseService {
     private final ExpenseRepository expenseRepository;
     private final VehicleRepository vehicleRepository;
     private final FuelEntryRepository fuelEntryRepository;
-    private final ExpenseStatisticsCalculator statisticsCalculator;
 
     public ExpenseService(
             ExpenseRepository expenseRepository,
             VehicleRepository vehicleRepository,
-            FuelEntryRepository fuelEntryRepository,
-            ExpenseStatisticsCalculator statisticsCalculator
+            FuelEntryRepository fuelEntryRepository
     ) {
         this.expenseRepository = expenseRepository;
         this.vehicleRepository = vehicleRepository;
         this.fuelEntryRepository = fuelEntryRepository;
-        this.statisticsCalculator = statisticsCalculator;
     }
 
     @Transactional(readOnly = true)
@@ -137,8 +134,13 @@ public class ExpenseService {
     @Transactional(readOnly = true)
     public ExpenseStatisticsResponse findExpenseStatistics(Long ownerId, Long vehicleId) {
         findOwnedVehicle(ownerId, vehicleId);
-        List<Expense> expenses = expenseRepository.findAllByVehicle_IdOrderByExpenseDateAscIdAsc(vehicleId);
-        return statisticsCalculator.calculate(vehicleId, expenses);
+        return new ExpenseStatisticsResponse(
+                vehicleId,
+                expenseRepository.countByVehicle_Id(vehicleId),
+                expenseRepository.sumByCurrencyForVehicle(vehicleId),
+                expenseRepository.sumByCategoryAndCurrencyForVehicle(vehicleId),
+                expenseRepository.sumByMonthAndCurrencyForVehicle(vehicleId)
+        );
     }
 
     private void validateDateRange(LocalDate dateFrom, LocalDate dateTo) {

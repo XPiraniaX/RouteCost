@@ -22,12 +22,10 @@ class ExpenseServiceTests {
     private final ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
     private final VehicleRepository vehicleRepository = mock(VehicleRepository.class);
     private final FuelEntryRepository fuelEntryRepository = mock(FuelEntryRepository.class);
-    private final ExpenseStatisticsCalculator statisticsCalculator = new ExpenseStatisticsCalculator();
     private final ExpenseService service = new ExpenseService(
             expenseRepository,
             vehicleRepository,
-            fuelEntryRepository,
-            statisticsCalculator
+            fuelEntryRepository
     );
 
     @Test

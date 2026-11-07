@@ -12,6 +12,8 @@ import java.util.Optional;
 
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 
+    long countByOwner_Id(Long ownerId);
+
     Page<Vehicle> findAllByOwner_Id(Long ownerId, Pageable pageable);
 
     Page<Vehicle> findAllByOwner_IdAndFuelType(Long ownerId, FuelType fuelType, Pageable pageable);

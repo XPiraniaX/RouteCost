@@ -16,6 +16,10 @@ import java.util.Optional;
 
 public interface ReminderRepository extends JpaRepository<Reminder, Long>, JpaSpecificationExecutor<Reminder> {
 
+    long countByVehicle_Owner_IdAndStatus(Long ownerId, ReminderStatus status);
+
+    long countByVehicle_Owner_IdAndStatusAndDueDateBefore(Long ownerId, ReminderStatus status, LocalDate date);
+
     Page<Reminder> findAll(Specification<Reminder> specification, Pageable pageable);
 
     Optional<Reminder> findByIdAndVehicle_Id(Long id, Long vehicleId);
