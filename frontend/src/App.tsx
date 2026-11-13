@@ -11,6 +11,8 @@ import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { PublicOnlyRoute } from "./routes/PublicOnlyRoute";
 import { FuelPage } from "./features/fuel/FuelPage";
 import { FuelFormPage } from "./features/fuel/FuelFormPage";
+import { ExpensePage } from "./features/expenses/ExpensesPage";
+import { ExpenseFormPage } from "./features/expenses/ExpenseFormPage";
 
 export function App() {
   return (
@@ -26,6 +28,15 @@ export function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/vehicles" element={<VehiclesPage />} />
           <Route path="/fuel" element={<FuelPage />} />
+          <Route path="/expenses" element={<ExpensePage />} />
+          <Route
+            path="/expenses/:vehicleId/new"
+            element={<ExpenseFormPage />}
+          />
+          <Route
+            path="/expenses/:vehicleId/:expenseId/edit"
+            element={<ExpenseFormPage />}
+          />
           <Route path="/fuel/:vehicleId/new" element={<FuelFormPage />} />
           <Route
             path="/fuel/:vehicleId/:entryId/edit"

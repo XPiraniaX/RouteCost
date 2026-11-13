@@ -1,20 +1,95 @@
-.fuel-toolbar {
+.vehicle-toolbar {
   display: flex;
   align-items: flex-end;
   gap: var(--space-4);
   margin-bottom: var(--space-6);
   flex-wrap: wrap;
 }
-.fuel-toolbar .form-field {
+.vehicle-toolbar .form-field {
   min-width: 240px;
   max-width: 100%;
 }
-.fuel-toolbar > p {
+.vehicle-toolbar > p {
   font-size: var(--text-sm);
   margin: 0 0 10px auto;
 }
 .fuel-stats .stat > strong {
   font-size: 24px;
+}
+.expense-stats .stat > strong {
+  font-size: 24px;
+}
+.expense-currency-panel {
+  margin-bottom: var(--space-6);
+}
+.expense-currency-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--space-3);
+}
+.expense-currency-total {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: var(--border);
+  border-radius: var(--radius-md);
+  background: var(--color-raised);
+}
+.expense-currency-total > span {
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+.expense-currency-total > strong {
+  font-size: 20px;
+}
+.expense-currency-total > small {
+  color: var(--color-muted);
+}
+.expense-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) repeat(2, minmax(150px, 1fr)) auto;
+  align-items: end;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+.expense-filters .form-field {
+  min-width: 0;
+}
+.expense-filter-icon {
+  color: var(--color-muted);
+  margin: 0 0 12px var(--space-1);
+}
+.expense-table :is(th, td) {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+.expense-row-actions {
+  white-space: nowrap;
+}
+.expense-description {
+  grid-column: 1 / -1;
+}
+.expense-description textarea {
+  width: 100%;
+  color: var(--color-text);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--color-raised);
+  padding: 10px 12px;
+  resize: vertical;
+}
+.expense-stat-empty {
+  color: var(--color-muted);
+}
+.expense-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+  gap: var(--space-6);
+  margin-top: var(--space-6);
+}
+.expense-charts .panel {
+  min-width: 0;
 }
 .fuel-table :is(th, td) {
   padding-left: 12px;
@@ -87,13 +162,13 @@
   }
 }
 @media (max-width: 760px) {
-  .fuel-toolbar {
+  .vehicle-toolbar {
     align-items: stretch;
   }
-  .fuel-toolbar .form-field {
+  .vehicle-toolbar .form-field {
     width: 100%;
   }
-  .fuel-toolbar > p {
+  .vehicle-toolbar > p {
     margin: 0;
   }
   .fuel-table {
@@ -134,5 +209,49 @@
   }
   .fuel-stats .stat > strong {
     font-size: 22px;
+  }
+  .expense-stats .stat > strong {
+    font-size: 22px;
+  }
+  .expense-filters {
+    grid-template-columns: 1fr;
+  }
+  .expense-filter-icon {
+    display: none;
+  }
+  .expense-history-table {
+    min-width: 0;
+    display: block;
+  }
+  .expense-history-table thead {
+    display: none;
+  }
+  .expense-history-table tbody {
+    display: block;
+  }
+  .expense-history-table tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+    border-top: var(--border);
+    padding: var(--space-5);
+  }
+  .expense-history-table td {
+    border: 0;
+    padding: 0;
+    white-space: normal;
+    text-align: left;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .expense-history-table td::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--color-muted);
+    font-size: 10px;
+    margin-bottom: var(--space-1);
+  }
+  .expense-history-table .expense-row-actions::before {
+    content: none;
   }
 }

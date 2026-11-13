@@ -91,22 +91,15 @@ export function AppLayout() {
             <Fuel size={18} />
             Tankowania
           </NavLink>
-          {[
-            { icon: ReceiptText, title: "Wydatki" },
-            { icon: Bell, title: "Przypomnienia" },
-          ].map(({ icon: Icon, title }) => {
-            return (
-              <button
-                key={title}
-                disabled
-                title="Moduł będzie dostępny w kolejnym etapie"
-              >
-                <Icon size={18} />
-                {title}
-                <span>Wkrótce</span>
-              </button>
-            );
-          })}
+          <NavLink to="/expenses" onClick={() => setOpen(false)}>
+            <ReceiptText size={18} />
+            Wydatki
+          </NavLink>
+          <button disabled title="Moduł będzie dostępny w kolejnym etapie">
+            <Bell size={18} />
+            Przypomnienia
+            <span>Wkrótce</span>
+          </button>
         </nav>
         <div className="sidebar-bottom">
           <span className="small-label">ROUTECOST</span>
@@ -139,7 +132,9 @@ export function AppLayout() {
                   ? "Dashboard"
                   : location.pathname.startsWith("/fuel")
                     ? "Tankowania"
-                    : "Pojazdy"}
+                    : location.pathname.startsWith("/expenses")
+                      ? "Wydatki"
+                      : "Pojazdy"}
               </span>
             </span>
           </div>

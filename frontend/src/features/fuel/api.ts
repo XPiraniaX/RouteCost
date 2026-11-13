@@ -1,12 +1,11 @@
+import { validId } from "../../utils/ids";
 import {
-  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
   type QueryClient,
 } from "@tanstack/react-query";
 import { api } from "../../api/http";
-import { vehicleApi } from "../vehicles/api";
 
 export interface FuelRequest {
   entryDate: string;
@@ -59,7 +58,7 @@ export const fuelApi = {
     await api.delete(`${root(id)}/fuel-entries/${entryId}`);
   },
 };
-export const validId = (id: number) => Number.isSafeInteger(id) && id > 0;
+export { validId } from "../../utils/ids";
 export const useFuelEntries = (id: number, page: number, order: SortOrder) =>
   useQuery({
     queryKey: ["fuel", id, "list", page, order],
@@ -77,14 +76,6 @@ export const useFuelStatistics = (id: number) =>
     queryKey: ["fuel", id, "statistics"],
     queryFn: () => fuelApi.statistics(id),
     enabled: validId(id),
-  });
-export const useVehicleOptions = () =>
-  useInfiniteQuery({
-    queryKey: ["vehicles", "selection"],
-    initialPageParam: 0,
-    queryFn: ({ pageParam }) => vehicleApi.list(pageParam, "", 50),
-    getNextPageParam: (page) =>
-      page.page + 1 < page.totalPages ? page.page + 1 : undefined,
   });
 export const invalidateFuel = (client: QueryClient, id: number) =>
   Promise.all([

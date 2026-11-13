@@ -4,6 +4,8 @@
 !.env.example
 application-local.properties
 application-local.yml
+Project_CONTEXT.md
+REQUIREMENTS.md
 
 # Java / Maven
 target/
@@ -57,3 +59,4 @@ coverage/
 .DS_Store
 Thumbs.db
 desktop.ini
+

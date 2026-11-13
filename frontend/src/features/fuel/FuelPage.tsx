@@ -1,21 +1,18 @@
+import { VehicleWorkspace } from "../../components/VehicleWorkspace";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   ErrorState,
   Loading,
-  EmptyState,
-  PageHeader,
 } from "../../components/ui";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { dateLabel } from "../../utils/date";
 import { number } from "../../utils/format";
-import { useVehicle, type Vehicle } from "../vehicles/api";
+import type { Vehicle } from "../vehicles/api";
 import {
   useDeleteFuel,
   useFuelEntries,
-  useVehicleOptions,
-  validId,
   type FuelEntry,
   type SortOrder,
 } from "./api";
@@ -25,106 +22,7 @@ const FuelCharts = lazy(() =>
   import("./FuelCharts").then((module) => ({ default: module.FuelCharts })),
 );
 
-export function FuelPage() {
-  const [params, setParams] = useSearchParams();
-  const options = useVehicleOptions();
-  const vehicles = options.data?.pages.flatMap((page) => page.content) ?? [];
-  const rawId = params.get("vehicleId");
-  const id = rawId !== null ? Number(rawId) : (vehicles[0]?.id ?? 0);
-  const selected = useVehicle(id);
-  const changeVehicle = (value: string) => setParams({ vehicleId: value });
-  return (
-    <>
-      <PageHeader
-        eyebrow="KOSZTY I ZUŻYCIE"
-        title="Tankowania"
-        description="Historia paliwa, wydatki na tankowania i rzeczywiste spalanie."
-      >
-        {selected.data && (
-          <Link className="button button-primary" to={`/fuel/${id}/new`}>
-            <Plus size={17} />
-            Dodaj tankowanie
-          </Link>
-        )}
-      </PageHeader>
-      {options.isPending ? (
-        <Loading />
-      ) : options.isError && !options.data ? (
-        <ErrorState
-          error={options.error}
-          retry={() => void options.refetch()}
-        />
-      ) : !vehicles.length && !rawId ? (
-        <section className="panel">
-          <EmptyState />
-        </section>
-      ) : (
-        <>
-          <div className="fuel-toolbar">
-            <label className="form-field">
-              <span>Wybrany pojazd</span>
-              <select
-                value={id || ""}
-                onChange={(event) => changeVehicle(event.target.value)}
-              >
-                {!id && <option value="">Wybierz pojazd</option>}
-                {selected.data && !vehicles.some((v) => v.id === id) && (
-                  <option value={id}>
-                    {selected.data.make} {selected.data.model} ·{" "}
-                    {selected.data.productionYear}
-                  </option>
-                )}
-                {vehicles.map((vehicle) => (
-                  <option value={vehicle.id} key={vehicle.id}>
-                    {vehicle.make} {vehicle.model} · {vehicle.productionYear}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {options.hasNextPage && (
-              <button
-                className="button button-secondary"
-                disabled={options.isFetchingNextPage}
-                onClick={() => void options.fetchNextPage()}
-              >
-                {options.isFetchingNextPage
-                  ? "Ładowanie…"
-                  : "Wczytaj kolejne pojazdy"}
-              </button>
-            )}
-            <p className="muted">
-              Statystyki dotyczą całej historii wybranego pojazdu.
-            </p>
-          </div>
-          {options.isFetchNextPageError && (
-            <ErrorState
-              error={options.error}
-              retry={() => void options.fetchNextPage()}
-            />
-          )}
-          {!validId(id) ? (
-            <ErrorState
-              error={
-                new Error(
-                  "Nieprawidłowy identyfikator pojazdu. Wybierz pojazd z listy.",
-                )
-              }
-            />
-          ) : selected.isPending ? (
-            <Loading />
-          ) : selected.isError ? (
-            <ErrorState
-              error={selected.error}
-              retry={() => void selected.refetch()}
-            />
-          ) : (
-            <FuelContent key={id} vehicle={selected.data} />
-          )}
-        </>
-      )}
-    </>
-  );
-}
+export function FuelPage() { return <VehicleWorkspace title="Tankowania" description="Historia paliwa, wydatki na tankowania i rzeczywiste spalanie." basePath="/fuel" actionLabel="Dodaj tankowanie">{vehicle => <FuelContent key={vehicle.id} vehicle={vehicle} />}</VehicleWorkspace>; }
 function FuelContent({ vehicle }: { vehicle: Vehicle }) {
   const [params, setParams] = useSearchParams();
   const rawPage = Number(params.get("page") ?? 0);

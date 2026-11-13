@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { api } from "../../api/http";
 
 export const fuels = {
@@ -104,4 +104,13 @@ export const useCosts = (id: number) =>
     queryFn: async () =>
       (await api.get<CostSummary>(`/api/vehicles/${id}/cost-summary`)).data,
     enabled: Number.isSafeInteger(id) && id > 0,
+  });
+
+export const useVehicleOptions = () =>
+  useInfiniteQuery({
+    queryKey: ["vehicles", "selection"],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => vehicleApi.list(pageParam, "", 50),
+    getNextPageParam: (page) =>
+      page.page + 1 < page.totalPages ? page.page + 1 : undefined,
   });
