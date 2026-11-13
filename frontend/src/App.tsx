@@ -1,6 +1,10 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthLayout } from "./layouts/AuthLayout";
-import { HomePage } from "./pages/HomePage";
+import { AppLayout } from "./layouts/AppLayout";
+import { DashboardPage } from "./features/dashboard/DashboardPage";
+import { VehiclesPage } from "./features/vehicles/VehiclesPage";
+import { VehicleFormPage } from "./features/vehicles/VehicleFormPage";
+import { VehicleDetailPage } from "./features/vehicles/VehicleDetailPage";
 import { LoginPage } from "./features/auth/LoginPage";
 import { RegisterPage } from "./features/auth/RegisterPage";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
@@ -16,7 +20,16 @@ export function App() {
         </Route>
       </Route>
       <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<HomePage />} />
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/vehicles" element={<VehiclesPage />} />
+          <Route path="/vehicles/new" element={<VehicleFormPage />} />
+          <Route path="/vehicles/:vehicleId" element={<VehicleDetailPage />} />
+          <Route
+            path="/vehicles/:vehicleId/edit"
+            element={<VehicleFormPage />}
+          />
+        </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

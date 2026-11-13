@@ -14,12 +14,18 @@ describe("ProtectedRoute", () => {
     authState.isAuthenticated = false;
   });
 
-  it("redirects an unauthenticated visitor to login", () => {
+  it.each([
+    "/",
+    "/vehicles",
+    "/vehicles/new",
+    "/vehicles/1",
+    "/vehicles/1/edit",
+  ])("redirects an unauthenticated visitor from %s to login", (path) => {
     render(
-      <MemoryRouter initialEntries={["/"]}>
+      <MemoryRouter initialEntries={[path]}>
         <Routes>
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<p>Private home</p>} />
+            <Route path="/*" element={<p>Private home</p>} />
           </Route>
           <Route path="/login" element={<p>Login page</p>} />
         </Routes>
