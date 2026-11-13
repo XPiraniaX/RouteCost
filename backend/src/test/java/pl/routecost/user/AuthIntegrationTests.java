@@ -5,15 +5,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -35,6 +44,15 @@ class AuthIntegrationTests {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired
+    private RefreshTokenService refreshTokenService;
+
+    @Autowired
+    private JwtEncoder jwtEncoder;
+
     @Test
     void registersAndAllowsAccessToCurrentUserEndpointWithIssuedToken() throws Exception {
         String email = uniqueEmail();
@@ -48,6 +66,13 @@ class AuthIntegrationTests {
                 .andExpect(jsonPath("$.user.role").value("USER"))
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andReturn();
+
+        var refreshCookie = registration.getResponse().getCookie("routecost_refresh");
+        assertTrue(refreshCookie != null && refreshCookie.isHttpOnly());
+        assertTrue(registration.getResponse().getHeader("Set-Cookie").contains("Path=/api/auth"));
+        assertTrue(registration.getResponse().getHeader("Set-Cookie").contains("SameSite=Lax"));
+        assertTrue(registration.getResponse().getHeader("Set-Cookie").contains("Max-Age=604800"));
+        assertTrue(!registration.getResponse().getContentAsString().contains("refreshToken"));
 
         User savedUser = userRepository.findByEmailIgnoreCase(email).orElseThrow();
         assertNotEquals("Correct-Horse-Battery-12!", savedUser.getPasswordHash());
@@ -99,7 +124,11 @@ class AuthIntegrationTests {
                         .content(loginRequest(email, "Correct-Horse-Battery-12!")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.email").value(email))
-                .andExpect(jsonPath("$.accessToken").isNotEmpty());
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(header().string(
+                        "Set-Cookie",
+                        org.hamcrest.Matchers.containsString("HttpOnly")
+                ));
     }
 
     @Test
@@ -130,6 +159,134 @@ class AuthIntegrationTests {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void refreshesAnExpiredAccessTokenAndRotatesTheHttpOnlyCookie() throws Exception {
+        String email = uniqueEmail();
+        var registration = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registrationRequest(email)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String oldRefreshToken = registration.getResponse().getCookie("routecost_refresh").getValue();
+        String expiredAccessToken = expiredAccessToken(userRepository.findByEmailIgnoreCase(email).orElseThrow());
+
+        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + expiredAccessToken))
+                .andExpect(status().isUnauthorized());
+
+        var refreshed = mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new jakarta.servlet.http.Cookie("routecost_refresh", oldRefreshToken))
+                        .header("X-RouteCost-Auth", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andReturn();
+        String nextRefreshToken = refreshed.getResponse().getCookie("routecost_refresh").getValue();
+        assertNotEquals(oldRefreshToken, nextRefreshToken);
+        mockMvc.perform(get("/api/auth/me")
+                        .header("Authorization", "Bearer " + extractToken(refreshed.getResponse().getContentAsString())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value(email));
+    }
+
+    @Test
+    void rejectsInvalidAndExpiredRefreshTokensAndClearsTheirCookies() throws Exception {
+        mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new jakarta.servlet.http.Cookie("routecost_refresh", "not-a-valid-token"))
+                        .header("X-RouteCost-Auth", "1"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(result -> assertTrue(result.getResponse().getHeader("Set-Cookie").contains("Max-Age=0")));
+
+        User user = userRepository.saveAndFlush(new User(
+                uniqueEmail(), passwordEncoder.encode("Correct-Horse-Battery-12!"), "Auth", "Test"
+        ));
+        String expired = "expired-refresh-token-" + UUID.randomUUID();
+        refreshTokenRepository.saveAndFlush(new RefreshToken(
+                user, refreshTokenService.hash(expired), UUID.randomUUID(),
+                Instant.now().minus(1, ChronoUnit.SECONDS), Instant.now().minus(8, ChronoUnit.DAYS)
+        ));
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new jakarta.servlet.http.Cookie("routecost_refresh", expired))
+                        .header("X-RouteCost-Auth", "1"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(result -> assertTrue(result.getResponse().getHeader("Set-Cookie").contains("Max-Age=0")));
+    }
+
+    @Test
+    void logoutRevokesRefreshSessionAndClearsCookie() throws Exception {
+        var registration = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registrationRequest(uniqueEmail())))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String refreshToken = registration.getResponse().getCookie("routecost_refresh").getValue();
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .cookie(new jakarta.servlet.http.Cookie("routecost_refresh", refreshToken))
+                        .header("X-RouteCost-Auth", "1"))
+                .andExpect(status().isNoContent())
+                .andExpect(result -> assertTrue(result.getResponse().getHeader("Set-Cookie").contains("Max-Age=0")));
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new jakarta.servlet.http.Cookie("routecost_refresh", refreshToken))
+                        .header("X-RouteCost-Auth", "1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void replayingRotatedRefreshTokenRevokesItsTokenFamily() throws Exception {
+        var registration = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registrationRequest(uniqueEmail())))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String first = registration.getResponse().getCookie("routecost_refresh").getValue();
+        var rotation = mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new jakarta.servlet.http.Cookie("routecost_refresh", first))
+                        .header("X-RouteCost-Auth", "1"))
+                .andExpect(status().isOk())
+                .andReturn();
+        String second = rotation.getResponse().getCookie("routecost_refresh").getValue();
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new jakarta.servlet.http.Cookie("routecost_refresh", first))
+                        .header("X-RouteCost-Auth", "1"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new jakarta.servlet.http.Cookie("routecost_refresh", second))
+                        .header("X-RouteCost-Auth", "1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void refreshEndpointRequiresTheCsrfRequestHeader() throws Exception {
+        var registration = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registrationRequest(uniqueEmail())))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String refreshToken = registration.getResponse().getCookie("routecost_refresh").getValue();
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new jakarta.servlet.http.Cookie("routecost_refresh", refreshToken)))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new jakarta.servlet.http.Cookie("routecost_refresh", refreshToken))
+                        .header("X-RouteCost-Auth", "1"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void corsPreflightAllowsCredentialedRefreshFromConfiguredFrontend() throws Exception {
+        mockMvc.perform(options("/api/auth/refresh")
+                        .header("Origin", "http://localhost:5173")
+                        .header("Access-Control-Request-Method", "POST")
+                        .header("Access-Control-Request-Headers", "x-routecost-auth"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"))
+                .andExpect(header().string("Access-Control-Allow-Headers", org.hamcrest.Matchers.containsString("x-routecost-auth")));
+    }
+
     private String uniqueEmail() {
         return "auth-" + UUID.randomUUID() + "@routecost.example";
     }
@@ -156,5 +313,22 @@ class AuthIntegrationTests {
             throw new AssertionError("Authentication response did not contain an access token");
         }
         return matcher.group(1);
+    }
+
+    private String expiredAccessToken(User user) {
+        Instant now = Instant.now();
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer("routecost")
+                .issuedAt(now.minusSeconds(180))
+                .expiresAt(now.minusSeconds(120))
+                .subject(user.getEmail())
+                .claim("userId", user.getId())
+                .claim("firstName", user.getFirstName())
+                .claim("lastName", user.getLastName())
+                .claim("roles", java.util.List.of(user.getRole().name()))
+                .build();
+        return jwtEncoder.encode(JwtEncoderParameters.from(
+                JwsHeader.with(MacAlgorithm.HS256).build(), claims
+        )).getTokenValue();
     }
 }

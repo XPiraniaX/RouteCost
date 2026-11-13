@@ -22,7 +22,10 @@ export function LoginPage() {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema), defaultValues: { email: "", password: "" } });
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+  });
 
   const submit = handleSubmit(async (values) => {
     setServerError("");
@@ -52,15 +55,27 @@ export function LoginPage() {
         error={errors.email?.message}
         {...registerField("email")}
       />
-      <PasswordField label="Hasło" autoComplete="current-password" registration={registerField("password")} error={errors.password?.message} />
+      <PasswordField
+        label="Hasło"
+        autoComplete="current-password"
+        registration={registerField("password")}
+        error={errors.password?.message}
+      />
 
       {serverError && <AuthFeedback message={serverError} />}
 
       <button className="primary-button mt-1" type="submit" disabled={busy}>
-        {busy ? <LoaderCircle className="animate-spin" size={18} /> : <span>Zaloguj się</span>}
+        {busy ? (
+          <LoaderCircle className="animate-spin" size={18} />
+        ) : (
+          <span>Zaloguj się</span>
+        )}
         {!busy && <ArrowRight size={17} />}
       </button>
-      <p className="form-security"><span className="security-dot" /> Token działa tylko w pamięci aktywnej karty.</p>
+      <p className="form-security">
+        <span className="security-dot" /> Sesja jest odtwarzana automatycznie i
+        odnawiana przez maksymalnie 7 dni.
+      </p>
     </form>
   );
 }

@@ -1,6 +1,5 @@
 package pl.routecost.user;
 
-import pl.routecost.user.dto.AuthResponse;
 import pl.routecost.user.dto.LoginRequest;
 import pl.routecost.user.dto.RegisterRequest;
 import pl.routecost.user.exception.EmailAlreadyRegisteredException;
@@ -13,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
+import java.util.Optional;
 
 @Service
 public class UserAuthService {
@@ -20,19 +20,22 @@ public class UserAuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
 
     public UserAuthService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            JwtService jwtService
+            JwtService jwtService,
+            RefreshTokenService refreshTokenService
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public IssuedAuthSession register(RegisterRequest request) {
         validatePasswordLength(request.password());
         String normalizedEmail = normalizeEmail(request.email());
         if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
@@ -53,18 +56,33 @@ public class UserAuthService {
             // The unique database constraint also protects against simultaneous registrations.
             throw new EmailAlreadyRegisteredException();
         }
-        return jwtService.createAuthResponse(savedUser);
+        return createSession(savedUser);
     }
 
-    @Transactional(readOnly = true)
-    public AuthResponse login(LoginRequest request) {
+    @Transactional
+    public IssuedAuthSession login(LoginRequest request) {
         validatePasswordLength(request.password());
         User user = userRepository.findByEmailIgnoreCase(normalizeEmail(request.email()))
                 .filter(User::isEnabled)
                 .filter(candidate -> passwordEncoder.matches(request.password(), candidate.getPasswordHash()))
                 .orElseThrow(InvalidCredentialsException::new);
 
-        return jwtService.createAuthResponse(user);
+        return createSession(user);
+    }
+
+    @Transactional
+    public Optional<IssuedAuthSession> refresh(String refreshToken) {
+        return refreshTokenService.rotate(refreshToken)
+                .map(grant -> new IssuedAuthSession(jwtService.createAuthResponse(grant.user()), grant.rawToken()));
+    }
+
+    @Transactional
+    public void logout(String refreshToken) {
+        refreshTokenService.revokeFamily(refreshToken);
+    }
+
+    private IssuedAuthSession createSession(User user) {
+        return new IssuedAuthSession(jwtService.createAuthResponse(user), refreshTokenService.issue(user).rawToken());
     }
 
     private String normalizeEmail(String email) {

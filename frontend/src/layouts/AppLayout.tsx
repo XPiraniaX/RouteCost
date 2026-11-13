@@ -14,7 +14,7 @@ import {
 import { Brand } from "../components/Brand";
 import { useAuth } from "../features/auth/useAuth";
 export function AppLayout() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, authError } = useAuth();
   const [open, setOpen] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -151,7 +151,7 @@ export function AppLayout() {
             </div>
             <button
               className="icon-button"
-              onClick={signOut}
+              onClick={() => void signOut()}
               aria-label="Wyloguj się"
               title="Wyloguj się"
             >
@@ -160,6 +160,11 @@ export function AppLayout() {
           </div>
         </header>
         <main id="main" className="app-main">
+          {authError && (
+            <div className="feedback feedback-error" role="alert">
+              {authError}
+            </div>
+          )}
           {notice && (
             <div className="feedback feedback-success" role="status">
               <CheckCircle2 size={18} />
