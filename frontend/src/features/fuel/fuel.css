@@ -1,0 +1,138 @@
+.fuel-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+}
+.fuel-toolbar .form-field {
+  min-width: 240px;
+  max-width: 100%;
+}
+.fuel-toolbar > p {
+  font-size: var(--text-sm);
+  margin: 0 0 10px auto;
+}
+.fuel-stats .stat > strong {
+  font-size: 24px;
+}
+.fuel-table :is(th, td) {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+.fuel-table :is(th, td):first-child {
+  padding-left: 24px;
+}
+.badge-positive {
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  border-color: #31574e;
+}
+.fuel-charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+.fuel-charts .panel {
+  min-width: 0;
+}
+.form-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.fuel-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  grid-column: 1 / -1;
+  cursor: pointer;
+}
+.app-shell .fuel-checkbox input {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--color-accent);
+  flex-shrink: 0;
+}
+.fuel-checkbox strong {
+  display: block;
+  font-weight: 550;
+}
+.fuel-checkbox small {
+  display: block;
+  color: var(--color-muted);
+  margin-top: var(--space-1);
+}
+.fuel-form-note {
+  margin-top: var(--space-6);
+  padding: var(--space-4);
+  background: var(--color-raised);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+.fuel-form-note p {
+  color: var(--color-muted);
+  margin: var(--space-2) 0 0;
+  line-height: 1.8;
+}
+@media (max-width: 1200px) {
+  .fuel-charts {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+@media (max-width: 760px) {
+  .fuel-toolbar {
+    align-items: stretch;
+  }
+  .fuel-toolbar .form-field {
+    width: 100%;
+  }
+  .fuel-toolbar > p {
+    margin: 0;
+  }
+  .fuel-table {
+    min-width: 0;
+    display: block;
+  }
+  .fuel-table thead {
+    display: none;
+  }
+  .fuel-table tbody {
+    display: block;
+  }
+  .fuel-table tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+    border-top: var(--border);
+    padding: var(--space-5);
+  }
+  .fuel-table td,
+  .fuel-table td:first-child {
+    border: 0;
+    padding: 0;
+    white-space: normal;
+    text-align: left;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .fuel-table td::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--color-muted);
+    font-size: 10px;
+    margin-bottom: var(--space-1);
+  }
+  .fuel-row-actions {
+    align-self: end;
+  }
+  .fuel-stats .stat > strong {
+    font-size: 22px;
+  }
+}

@@ -9,6 +9,8 @@ import { LoginPage } from "./features/auth/LoginPage";
 import { RegisterPage } from "./features/auth/RegisterPage";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { PublicOnlyRoute } from "./routes/PublicOnlyRoute";
+import { FuelPage } from "./features/fuel/FuelPage";
+import { FuelFormPage } from "./features/fuel/FuelFormPage";
 
 export function App() {
   return (
@@ -23,6 +25,12 @@ export function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/vehicles" element={<VehiclesPage />} />
+          <Route path="/fuel" element={<FuelPage />} />
+          <Route path="/fuel/:vehicleId/new" element={<FuelFormPage />} />
+          <Route
+            path="/fuel/:vehicleId/:entryId/edit"
+            element={<FuelFormPage />}
+          />
           <Route path="/vehicles/new" element={<VehicleFormPage />} />
           <Route path="/vehicles/:vehicleId" element={<VehicleDetailPage />} />
           <Route

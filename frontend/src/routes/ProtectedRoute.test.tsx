@@ -20,6 +20,9 @@ describe("ProtectedRoute", () => {
     "/vehicles/new",
     "/vehicles/1",
     "/vehicles/1/edit",
+    "/fuel",
+    "/fuel/1/new",
+    "/fuel/1/10/edit",
   ])("redirects an unauthenticated visitor from %s to login", (path) => {
     render(
       <MemoryRouter initialEntries={[path]}>

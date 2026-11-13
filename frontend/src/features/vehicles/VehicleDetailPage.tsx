@@ -1,7 +1,7 @@
 import { number } from "../../utils/format";
 import { lazy, Suspense, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Fuel, Pencil, Trash2 } from "lucide-react";
 import { ErrorState, Loading, PageHeader } from "../../components/ui";
 import { fuels, useVehicle } from "./api";
 import { DeleteVehicleDialog } from "./DeleteVehicleDialog";
@@ -34,6 +34,10 @@ export function VehicleDetailPage() {
         title={`${v.make} ${v.model}`}
         description={`${v.productionYear} · ${fuels[v.fuelType]} · ${number(v.currentOdometer)} km`}
       >
+        <Link className="button button-secondary" to={`/fuel?vehicleId=${id}`}>
+          <Fuel size={15} />
+          Tankowania
+        </Link>
         <Link className="button button-secondary" to={`/vehicles/${id}/edit`}>
           <Pencil size={15} />
           Edytuj

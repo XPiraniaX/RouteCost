@@ -87,8 +87,11 @@ export function AppLayout() {
             <CarFront size={18} />
             Pojazdy
           </NavLink>
+          <NavLink to="/fuel" onClick={() => setOpen(false)}>
+            <Fuel size={18} />
+            Tankowania
+          </NavLink>
           {[
-            { icon: Fuel, title: "Tankowania" },
             { icon: ReceiptText, title: "Wydatki" },
             { icon: Bell, title: "Przypomnienia" },
           ].map(({ icon: Icon, title }) => {
@@ -131,7 +134,12 @@ export function AppLayout() {
             <span>
               Moja przestrzeń{" "}
               <span className="muted">
-                / {location.pathname === "/" ? "Dashboard" : "Pojazdy"}
+                /{" "}
+                {location.pathname === "/"
+                  ? "Dashboard"
+                  : location.pathname.startsWith("/fuel")
+                    ? "Tankowania"
+                    : "Pojazdy"}
               </span>
             </span>
           </div>

@@ -1,5 +1,9 @@
 # RouteCost — frontend, etap 2
 
+Moduł tankowań z etapu 3 jest opisany w [FUEL.md](./FUEL.md): aktualne funkcje,
+kontrakty, lista plików i instrukcja testowania. Poniższy raport etapu 2
+opisuje stan historyczny; tankowania są już dostępne w nawigacji.
+
 ## Uruchomienie
 
 Z katalogu głównego repozytorium:

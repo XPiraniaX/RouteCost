@@ -13,6 +13,7 @@ import "@fontsource/inter/latin-500.css";
 import "@fontsource/inter/latin-600.css";
 import "./design-tokens.css";
 import "./app.css";
+import "./features/fuel/fuel.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {

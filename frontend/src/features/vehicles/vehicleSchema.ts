@@ -1,9 +1,7 @@
 import { z } from "zod";
 import { fuels } from "./api";
-export const localToday = () => {
-  const date = new Date();
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-};
+import { localToday } from "../../utils/date";
+export { localToday } from "../../utils/date";
 export const vehicleSchema = (minimumOdometer = 0) =>
   z.object({
     make: z
