@@ -1,0 +1,123 @@
+.reminder-list-panel {
+  min-width: 0;
+}
+.reminder-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 240px));
+  gap: var(--space-4);
+  padding: 0 24px 20px;
+}
+.reminder-filters .form-field {
+  min-width: 0;
+}
+.reminder-table :is(th, td) {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.reminder-table td {
+  white-space: normal;
+}
+.reminder-title-cell {
+  min-width: 200px;
+  max-width: 330px;
+}
+.reminder-title-cell strong,
+.reminder-title-cell > span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.reminder-title-cell > span {
+  margin-top: 5px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.reminder-overdue-label {
+  display: block;
+  margin-top: 5px;
+  color: var(--color-danger);
+  font-size: 10px;
+}
+.reminder-status {
+  background: #1b2b35;
+  color: #b7c8d0;
+}
+.reminder-status-active {
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  border-color: #31574e;
+}
+.reminder-status-completed {
+  color: #a9c9ba;
+  background: #1c3029;
+  border-color: #315044;
+}
+.reminder-status-cancelled {
+  color: var(--color-muted);
+}
+.reminder-status-overdue {
+  color: var(--color-danger);
+  background: #2b1d25;
+  border-color: #67404a;
+}
+.reminder-row-actions {
+  white-space: nowrap !important;
+}
+.reminder-complete {
+  color: var(--color-accent);
+}
+.reminder-reactivate {
+  color: var(--color-warning);
+}
+.reminder-description {
+  grid-column: 1 / -1;
+}
+.reminder-description textarea {
+  width: 100%;
+  color: var(--color-text);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--color-raised);
+  padding: 10px 12px;
+  font: inherit;
+  resize: vertical;
+}
+@media (max-width: 760px) {
+  .reminder-filters {
+    grid-template-columns: 1fr;
+    padding: 0 20px 20px;
+  }
+  .reminder-table {
+    min-width: 0;
+    display: block;
+  }
+  .reminder-table thead {
+    display: none;
+  }
+  .reminder-table tbody {
+    display: block;
+  }
+  .reminder-table tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+    border-top: var(--border);
+    padding: var(--space-5);
+  }
+  .reminder-table td {
+    border: 0;
+    padding: 0;
+    text-align: left;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .reminder-table td::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--color-muted);
+    font-size: 10px;
+    margin-bottom: var(--space-1);
+  }
+  .reminder-table .reminder-row-actions::before {
+    content: none;
+  }
+}

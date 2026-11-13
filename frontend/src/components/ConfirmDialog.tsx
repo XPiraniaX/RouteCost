@@ -20,12 +20,30 @@ export function ConfirmDialog({
   confirm: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const closeRef = useRef(close);
+  const ignoreProgrammaticClose = useRef(false);
   const titleId = useId();
   const descriptionId = useId();
+  closeRef.current = close;
   useEffect(() => {
     const dialog = ref.current;
-    dialog?.showModal();
-    return () => dialog?.close();
+    if (!dialog) return;
+    const handleClose = () => {
+      if (ignoreProgrammaticClose.current) {
+        ignoreProgrammaticClose.current = false;
+        return;
+      }
+      closeRef.current();
+    };
+    dialog.addEventListener("close", handleClose);
+    dialog.showModal();
+    return () => {
+      if (dialog.open) {
+        ignoreProgrammaticClose.current = true;
+        dialog.close();
+      }
+      dialog.removeEventListener("close", handleClose);
+    };
   }, []);
   return (
     <dialog
@@ -37,7 +55,6 @@ export function ConfirmDialog({
         if (pending) event.preventDefault();
         else close();
       }}
-      onClose={close}
     >
       <Trash2 size={26} />
       <h2 id={titleId}>{title}</h2>
@@ -45,6 +62,7 @@ export function ConfirmDialog({
       {error && <ErrorState error={error} />}
       <div className="form-actions">
         <button
+          type="button"
           autoFocus
           className="button button-secondary"
           disabled={pending}
@@ -53,6 +71,7 @@ export function ConfirmDialog({
           Anuluj
         </button>
         <button
+          type="button"
           className="button button-danger"
           disabled={pending}
           onClick={confirm}

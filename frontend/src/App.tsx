@@ -13,6 +13,8 @@ import { FuelPage } from "./features/fuel/FuelPage";
 import { FuelFormPage } from "./features/fuel/FuelFormPage";
 import { ExpensePage } from "./features/expenses/ExpensesPage";
 import { ExpenseFormPage } from "./features/expenses/ExpenseFormPage";
+import { RemindersPage } from "./features/reminders/RemindersPage";
+import { ReminderFormPage } from "./features/reminders/ReminderFormPage";
 
 export function App() {
   return (
@@ -29,6 +31,15 @@ export function App() {
           <Route path="/vehicles" element={<VehiclesPage />} />
           <Route path="/fuel" element={<FuelPage />} />
           <Route path="/expenses" element={<ExpensePage />} />
+          <Route path="/reminders" element={<RemindersPage />} />
+          <Route
+            path="/reminders/:vehicleId/new"
+            element={<ReminderFormPage />}
+          />
+          <Route
+            path="/reminders/:vehicleId/:reminderId/edit"
+            element={<ReminderFormPage />}
+          />
           <Route
             path="/expenses/:vehicleId/new"
             element={<ExpenseFormPage />}

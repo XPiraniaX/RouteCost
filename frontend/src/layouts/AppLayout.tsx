@@ -95,11 +95,10 @@ export function AppLayout() {
             <ReceiptText size={18} />
             Wydatki
           </NavLink>
-          <button disabled title="Moduł będzie dostępny w kolejnym etapie">
+          <NavLink to="/reminders" onClick={() => setOpen(false)}>
             <Bell size={18} />
             Przypomnienia
-            <span>Wkrótce</span>
-          </button>
+          </NavLink>
         </nav>
         <div className="sidebar-bottom">
           <span className="small-label">ROUTECOST</span>
@@ -134,6 +133,8 @@ export function AppLayout() {
                     ? "Tankowania"
                     : location.pathname.startsWith("/expenses")
                       ? "Wydatki"
+                      : location.pathname.startsWith("/reminders")
+                        ? "Przypomnienia"
                       : "Pojazdy"}
               </span>
             </span>
