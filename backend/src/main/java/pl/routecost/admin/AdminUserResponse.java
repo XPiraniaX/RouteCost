@@ -5,18 +5,19 @@ import pl.routecost.user.UserRole;
 
 import java.time.OffsetDateTime;
 
-public record AdminUserSummaryResponse(
+public record AdminUserResponse(
         Long id,
         String email,
         String firstName,
         String lastName,
         UserRole role,
+        boolean enabled,
         OffsetDateTime createdAt
 ) {
-    public static AdminUserSummaryResponse from(User user) {
-        return new AdminUserSummaryResponse(
+    public static AdminUserResponse from(User user) {
+        return new AdminUserResponse(
                 user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(),
-                user.getRole(), user.getCreatedAt()
+                user.getRole(), user.isEnabled(), user.getCreatedAt()
         );
     }
 }

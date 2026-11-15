@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,7 +24,6 @@ import pl.routecost.user.dto.UserProfileResponse;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -112,16 +112,21 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public UserProfileResponse currentUser(@AuthenticationPrincipal Jwt jwt) {
+    public UserProfileResponse currentUser(@AuthenticationPrincipal Jwt jwt, Authentication authentication) {
         Number userId = jwt.getClaim("userId");
-        List<String> roles = jwt.getClaimAsStringList("roles");
+        UserRole role = authentication.getAuthorities().stream()
+                .map(authority -> authority.getAuthority())
+                .filter(authority -> authority.startsWith("ROLE_"))
+                .map(authority -> UserRole.valueOf(authority.substring("ROLE_".length())))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Authenticated user has no recognized role"));
 
         return new UserProfileResponse(
                 userId.longValue(),
                 jwt.getSubject(),
                 jwt.getClaimAsString("firstName"),
                 jwt.getClaimAsString("lastName"),
-                UserRole.valueOf(roles.getFirst())
+                role
         );
     }
 

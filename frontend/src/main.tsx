@@ -15,6 +15,7 @@ import "./design-tokens.css";
 import "./app.css";
 import "./features/fuel/fuel.css";
 import "./features/reminders/reminder.css";
+import "./features/admin/admin.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {

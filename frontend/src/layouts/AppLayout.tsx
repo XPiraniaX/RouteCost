@@ -9,6 +9,7 @@ import {
   LogOut,
   Menu,
   ReceiptText,
+  ShieldCheck,
   X,
 } from "lucide-react";
 import { Brand } from "../components/Brand";
@@ -99,6 +100,12 @@ export function AppLayout() {
             <Bell size={18} />
             Przypomnienia
           </NavLink>
+          {user?.role === "ADMIN" && (
+            <NavLink to="/admin" onClick={() => setOpen(false)}>
+              <ShieldCheck size={18} />
+              Administracja
+            </NavLink>
+          )}
         </nav>
         <div className="sidebar-bottom">
           <span className="small-label">ROUTECOST</span>
@@ -135,6 +142,8 @@ export function AppLayout() {
                       ? "Wydatki"
                       : location.pathname.startsWith("/reminders")
                         ? "Przypomnienia"
+                      : location.pathname.startsWith("/admin")
+                        ? "Administracja"
                       : "Pojazdy"}
               </span>
             </span>

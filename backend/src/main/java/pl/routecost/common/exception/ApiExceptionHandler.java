@@ -5,6 +5,8 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import pl.routecost.admin.AdminConflictException;
+import pl.routecost.admin.AdminUserNotFoundException;
 import pl.routecost.user.exception.EmailAlreadyRegisteredException;
 import pl.routecost.user.exception.InvalidCredentialsException;
 import pl.routecost.user.exception.PasswordTooLongException;
@@ -26,6 +28,16 @@ import java.util.TreeMap;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+    @ExceptionHandler(AdminUserNotFoundException.class)
+    ProblemDetail handleAdminUserNotFound(AdminUserNotFoundException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "User was not found.");
+    }
+
+    @ExceptionHandler(AdminConflictException.class)
+    ProblemDetail handleAdminConflict(AdminConflictException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+    }
 
     @ExceptionHandler(EmailAlreadyRegisteredException.class)
     ProblemDetail handleEmailAlreadyRegistered(EmailAlreadyRegisteredException exception) {

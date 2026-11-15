@@ -108,6 +108,14 @@ public class User {
         return enabled;
     }
 
+    public void changeRole(UserRole role) {
+        this.role = Objects.requireNonNull(role, "role cannot be null");
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
     public OffsetDateTime getCreatedAt() {
         return createdAt;
     }

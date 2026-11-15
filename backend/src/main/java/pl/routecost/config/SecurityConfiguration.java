@@ -10,8 +10,12 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -19,6 +23,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 import java.util.List;
+import pl.routecost.user.User;
+import pl.routecost.user.UserRepository;
+import pl.routecost.user.UserRole;
 
 @Configuration
 public class SecurityConfiguration {
@@ -26,7 +33,7 @@ public class SecurityConfiguration {
     @Bean
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            JwtAuthenticationConverter jwtAuthenticationConverter
+            Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter
     ) throws Exception {
         return http
                 .cors(Customizer.withDefaults())
@@ -44,14 +51,24 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        authoritiesConverter.setAuthoritiesClaimName("roles");
-        authoritiesConverter.setAuthorityPrefix("ROLE_");
+    Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter(
+            UserRepository userRepository
+    ) {
+        return jwt -> {
+            Object userIdClaim = jwt.getClaim("userId");
+            if (!(userIdClaim instanceof Number userIdNumber)) {
+                throw new InvalidBearerTokenException("Invalid bearer token");
+            }
+            User user = userRepository.findById(userIdNumber.longValue())
+                    .filter(User::isEnabled)
+                    .orElseThrow(() -> new InvalidBearerTokenException("Invalid bearer token"));
 
-        JwtAuthenticationConverter authenticationConverter = new JwtAuthenticationConverter();
-        authenticationConverter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
-        return authenticationConverter;
+            return new JwtAuthenticationToken(
+                    jwt,
+                    List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())),
+                    jwt.getSubject()
+            );
+        };
     }
 
     @Bean
