@@ -75,6 +75,21 @@ class VehicleIntegrationTests {
     }
 
     @Test
+    void adminDoesNotBypassVehicleOwnershipChecks() throws Exception {
+        String ownerToken = createUserToken();
+        String vehicleId = createVehicle(ownerToken, "Toyota", "Corolla", "PETROL", 120_000);
+        User administrator = userRepository.saveAndFlush(new User(
+                "admin-" + UUID.randomUUID() + "@routecost.example", "test-hash", "System", "Admin",
+                pl.routecost.user.UserRole.ADMIN
+        ));
+        String adminToken = jwtService.createAuthResponse(administrator).accessToken();
+
+        mockMvc.perform(get("/api/vehicles/{vehicleId}", vehicleId)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void updatesAndDeletesOwnedVehicle() throws Exception {
         String token = createUserToken();
         String vehicleId = createVehicle(token, "Toyota", "Corolla", "PETROL", 120_000);

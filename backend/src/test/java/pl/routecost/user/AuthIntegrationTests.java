@@ -53,6 +53,9 @@ class AuthIntegrationTests {
     @Autowired
     private JwtEncoder jwtEncoder;
 
+    @Autowired
+    private JwtService jwtService;
+
     @Test
     void registersAndAllowsAccessToCurrentUserEndpointWithIssuedToken() throws Exception {
         String email = uniqueEmail();
@@ -141,6 +144,47 @@ class AuthIntegrationTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.email").exists())
                 .andExpect(jsonPath("$.errors.password").exists());
+    }
+
+    @Test
+    void ignoresAttemptToChooseAdminRoleDuringPublicRegistration() throws Exception {
+        String email = uniqueEmail();
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","password":"Correct-Horse-Battery-12!",
+                                 "firstName":"Auth","lastName":"Test","role":"ADMIN"}
+                                """.formatted(email)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.user.role").value("USER"));
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                UserRole.USER, userRepository.findByEmailIgnoreCase(email).orElseThrow().getRole()
+        );
+    }
+
+    @Test
+    void adminUsersEndpointRequiresAdminRoleAndReturnsOnlySafeUserFields() throws Exception {
+        User regularUser = userRepository.saveAndFlush(new User(
+                uniqueEmail(), passwordEncoder.encode("Correct-Horse-Battery-12!"), "Regular", "User"
+        ));
+        User administrator = userRepository.saveAndFlush(new User(
+                uniqueEmail(), passwordEncoder.encode("Correct-Horse-Battery-12!"), "System", "Admin", UserRole.ADMIN
+        ));
+
+        mockMvc.perform(get("/api/admin/users"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/admin/users")
+                        .header("Authorization", "Bearer " + jwtService.createAuthResponse(regularUser).accessToken()))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/admin/users")
+                        .header("Authorization", "Bearer " + jwtService.createAuthResponse(administrator).accessToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].email").exists())
+                .andExpect(jsonPath("$.content[0].role").exists())
+                .andExpect(jsonPath("$.content[0].passwordHash").doesNotExist())
+                .andExpect(jsonPath("$.content[0].password").doesNotExist());
     }
 
     @Test

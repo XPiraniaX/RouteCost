@@ -49,11 +49,15 @@ public class User {
     }
 
     public User(String email, String passwordHash, String firstName, String lastName) {
+        this(email, passwordHash, firstName, lastName, UserRole.USER);
+    }
+
+    public User(String email, String passwordHash, String firstName, String lastName, UserRole role) {
         this.email = normalizeEmail(email);
         this.passwordHash = Objects.requireNonNull(passwordHash, "passwordHash cannot be null");
         this.firstName = Objects.requireNonNull(firstName, "firstName cannot be null");
         this.lastName = Objects.requireNonNull(lastName, "lastName cannot be null");
-        this.role = UserRole.USER;
+        this.role = Objects.requireNonNull(role, "role cannot be null");
         this.enabled = true;
     }
 
