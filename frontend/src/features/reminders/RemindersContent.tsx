@@ -5,6 +5,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { ErrorState, Loading } from "../../components/ui";
 import { dateLabel } from "../../utils/date";
 import { number } from "../../utils/format";
+import { polishPlural } from "../../utils/polishPlural";
 import type { Vehicle } from "../vehicles/api";
 import {
   useChangeReminderStatus,
@@ -105,7 +106,7 @@ export function RemindersContent({ vehicle }: { vehicle: Vehicle }) {
             <h2>Lista przypomnień</h2>
             <p>
               {query.data
-                ? `${number(query.data.totalElements)} wpisów · `
+                ? `${number(query.data.totalElements)} ${polishPlural(query.data.totalElements, ["wpis", "wpisy", "wpisów"])} · `
                 : ""}
               sortowanie według najbliższego terminu
             </p>
@@ -180,7 +181,7 @@ export function RemindersContent({ vehicle }: { vehicle: Vehicle }) {
                 setDeleting(reminder);
               }}
             />
-            <div className="pagination">
+            {query.data.content.length > 0 && <div className="pagination">
               <span>
                 Strona {query.data.totalPages ? page + 1 : 0} z {query.data.totalPages}
               </span>
@@ -204,7 +205,7 @@ export function RemindersContent({ vehicle }: { vehicle: Vehicle }) {
                   <ChevronRight size={16} />
                 </button>
               </div>
-            </div>
+            </div>}
           </>
         )}
       </section>

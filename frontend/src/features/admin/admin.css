@@ -49,6 +49,13 @@
   font-size: 0.78rem;
 }
 
+.admin-action-note {
+  flex: 0 0 100%;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  text-align: right;
+}
+
 .admin-pagination {
   gap: 1rem;
 }
@@ -68,7 +75,17 @@
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 900px) {
+  .admin-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-filters .form-field:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
   .admin-filters {
     grid-template-columns: 1fr;
   }
@@ -88,5 +105,9 @@
 
   .admin-row-actions {
     justify-content: flex-start;
+  }
+
+  .admin-action-note {
+    text-align: left;
   }
 }

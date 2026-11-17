@@ -17,6 +17,7 @@ import {
   type SortOrder,
 } from "./types";
 import { expenseFiltersSchema } from "./expenseSchema";
+import { polishPlural } from "../../utils/polishPlural";
 
 export function ExpenseContent({ vehicle }: { vehicle: Vehicle }) {
   const [params, setParams] = useSearchParams();
@@ -85,7 +86,7 @@ export function ExpenseContent({ vehicle }: { vehicle: Vehicle }) {
             <h2>Historia wydatków</h2>
             <p>
               {query.data
-                ? `Liczba wpisów: ${number(query.data.totalElements)} · `
+                ? `${number(query.data.totalElements)} ${polishPlural(query.data.totalElements, ["wpis", "wpisy", "wpisów"])} · `
                 : ""}
               kwoty są oznaczone walutą
             </p>
@@ -167,7 +168,7 @@ export function ExpenseContent({ vehicle }: { vehicle: Vehicle }) {
                 setDeleting(expense);
               }}
             />
-            <div className="pagination">
+            {query.data.content.length > 0 && <div className="pagination">
               <span>
                 Strona {query.data.totalPages ? page + 1 : 0} z{" "}
                 {query.data.totalPages}
@@ -190,7 +191,7 @@ export function ExpenseContent({ vehicle }: { vehicle: Vehicle }) {
                   <ChevronRight size={16} />
                 </button>
               </div>
-            </div>
+            </div>}
           </>
         )}
       </section>

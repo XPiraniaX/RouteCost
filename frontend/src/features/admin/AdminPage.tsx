@@ -21,6 +21,7 @@ import {
 } from "./api";
 import type { AdminUser, AdminUserFilters } from "./types";
 import { number } from "../../utils/format";
+import { polishPlural } from "../../utils/polishPlural";
 
 type Action =
   | { kind: "role"; user: AdminUser }
@@ -220,6 +221,11 @@ export function AdminPage() {
                             >
                               {row.enabled ? "Dezaktywuj" : "Aktywuj"}
                             </button>
+                            {isSelf && row.role === "ADMIN" && row.enabled && (
+                              <small className="admin-action-note">
+                                Nie możesz zmienić własnej roli ani dezaktywować własnego konta.
+                              </small>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -230,7 +236,7 @@ export function AdminPage() {
             </div>
             <div className="pagination admin-pagination">
               <span>
-                {number(usersQuery.data.totalElements)} kont · strona {usersQuery.data.page + 1}
+                {number(usersQuery.data.totalElements)} {polishPlural(usersQuery.data.totalElements, ["konto", "konta", "kont"])} · strona {usersQuery.data.page + 1}
                 {usersQuery.data.totalPages > 0 ? ` z ${usersQuery.data.totalPages}` : ""}
               </span>
               <div>

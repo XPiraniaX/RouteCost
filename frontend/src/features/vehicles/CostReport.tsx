@@ -3,6 +3,7 @@ import { number } from "../../utils/format";
 import { Fuel, Gauge } from "lucide-react";
 import { ErrorState, Loading, Stat } from "../../components/ui";
 import { useCosts } from "./api";
+import { polishPlural } from "../../utils/polishPlural";
 
 const categories: Record<string, string> = {
   REPAIR: "Naprawy",
@@ -40,7 +41,7 @@ export function CostReport({ id }: { id: number }) {
           label="Łączny koszt tankowań"
           icon={<Fuel size={19} />}
           value={number(fuel.totalCost)}
-          note={`Bez określonej waluty · ${number(fuel.fuelEntryCount)} tankowań`}
+          note={`Bez określonej waluty · ${number(fuel.fuelEntryCount)} ${polishPlural(fuel.fuelEntryCount, ["tankowanie", "tankowania", "tankowań"])}`}
         />
         <Stat
           label="Średnie spalanie"
@@ -84,8 +85,7 @@ export function CostReport({ id }: { id: number }) {
           <div>
             <h2>Pozostałe wydatki</h2>
             <p>
-              {number(otherExpenses.expenseCount)} wpisów · według walut i
-              kategorii
+              {number(otherExpenses.expenseCount)} {polishPlural(otherExpenses.expenseCount, ["wpis", "wpisy", "wpisów"])} · według walut i kategorii
             </p>
           </div>
         </div>

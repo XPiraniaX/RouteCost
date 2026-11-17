@@ -8,6 +8,8 @@ import {
 } from "../../components/ui";
 import { fuels, useVehicles } from "./api";
 import { VehicleTable } from "./VehicleTable";
+import { number } from "../../utils/format";
+import { polishPlural } from "../../utils/polishPlural";
 export function VehiclesPage() {
   const [page, setPage] = useState(0);
   const [fuel, setFuel] = useState("");
@@ -27,7 +29,7 @@ export function VehiclesPage() {
             <h2>Lista pojazdów</h2>
             <p>
               {query.data
-                ? `${query.data.totalElements} pojazdów w wybranym widoku`
+                ? `${number(query.data.totalElements)} ${polishPlural(query.data.totalElements, ["pojazd", "pojazdy", "pojazdów"])} w wybranym widoku`
                 : "Dane Twojego konta"}
             </p>
           </div>
@@ -57,7 +59,7 @@ export function VehiclesPage() {
         ) : (
           <>
             <VehicleTable vehicles={query.data.content} filtered={!!fuel} />
-            <div className="pagination">
+            {query.data.content.length > 0 && <div className="pagination">
               <span>
                 Strona {query.data.totalPages ? page + 1 : 0} z{" "}
                 {query.data.totalPages}
@@ -80,7 +82,7 @@ export function VehiclesPage() {
                   <ChevronRight size={16} />
                 </button>
               </div>
-            </div>
+            </div>}
           </>
         )}
       </section>

@@ -4,6 +4,7 @@ import { ErrorState, Loading, Stat } from "../../components/ui";
 import { number } from "../../utils/format";
 import { useExpenseStatistics } from "./api";
 import { categoryLabel } from "./types";
+import { polishPlural } from "../../utils/polishPlural";
 
 const MonthlyChart = lazy(() =>
   import("../../components/charts/MonthlyChart").then((module) => ({
@@ -68,7 +69,9 @@ export function ExpenseStatistics({ id }: { id: number }) {
                 <strong>
                   {number(row.totalAmount)} {row.currency}
                 </strong>
-                <small>{number(row.count)} wpisów</small>
+                <small>
+                  {number(row.count)} {polishPlural(row.count, ["wpis", "wpisy", "wpisów"])}
+                </small>
               </div>
             ))}
           </div>

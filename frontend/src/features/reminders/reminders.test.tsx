@@ -46,10 +46,22 @@ describe("RemindersContent", () => {
   it("renders entries, filters by status and invokes status transitions", async () => {
     mount(<RemindersContent vehicle={vehicle} />, "/reminders?vehicleId=1");
     expect(await screen.findByText("Oil service")).toBeInTheDocument();
+    expect(screen.getByText(/1 wpis ·/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Filtruj według statusu"), { target: { value: "ACTIVE" } });
     await waitFor(() => expect(api.get).toHaveBeenLastCalledWith("/api/vehicles/1/reminders", expect.objectContaining({ params: expect.objectContaining({ status: "ACTIVE", size: 10 }) })));
     fireEvent.click(await screen.findByRole("button", { name: "Oznacz jako wykonane: Oil service" }));
     await waitFor(() => expect(api.patch).toHaveBeenCalledWith("/api/vehicles/1/reminders/5/status", { status: "COMPLETED" }));
+  });
+
+  it("uses a Polish plural and preserves the empty state without pagination", async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 },
+    });
+    mount(<RemindersContent vehicle={vehicle} />, "/reminders?vehicleId=1");
+    expect(await screen.findByText("Nie masz jeszcze przypomnień")).toBeInTheDocument();
+    expect(screen.getByText(/0 wpisów ·/)).toBeInTheDocument();
+    expect(screen.queryByText(/Strona 0 z 0/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Poprzednia/ })).not.toBeInTheDocument();
   });
 
   it("requires confirmation before deleting and shows request errors", async () => {

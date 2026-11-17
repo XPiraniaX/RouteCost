@@ -159,6 +159,30 @@ describe("fuel history and CRUD", () => {
       vi.mocked(api.get).mock.calls.every(([path]) => path === "/api/vehicles"),
     ).toBe(true);
   });
+  it("keeps an empty fuel history free of pagination", async () => {
+    const original = vi.mocked(api.get).getMockImplementation()!;
+    vi.mocked(api.get).mockImplementation((path, config) =>
+      String(path).endsWith("/fuel-entries")
+        ? Promise.resolve({ data: { content: [], page: 0, totalPages: 0, totalElements: 0 } })
+        : original(path, config),
+    );
+    mount();
+    expect(await screen.findByText("Historia czeka na pierwszy wpis")).toBeInTheDocument();
+    expect(screen.queryByText(/Strona 0 z 0/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Poprzednia/ })).not.toBeInTheDocument();
+  });
+  it("keeps an empty fuel history free of pagination", async () => {
+    const original = vi.mocked(api.get).getMockImplementation()!;
+    vi.mocked(api.get).mockImplementation((path, config) =>
+      String(path).endsWith("/fuel-entries")
+        ? Promise.resolve({ data: { content: [], page: 0, totalPages: 0, totalElements: 0 } })
+        : original(path, config),
+    );
+    mount();
+    expect(await screen.findByText("Historia czeka na pierwszy wpis")).toBeInTheDocument();
+    expect(screen.queryByText(/Strona 0 z 0/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Poprzednia/ })).not.toBeInTheDocument();
+  });
   it("adds only supported request fields and invalidates dependent data", async () => {
     vi.mocked(api.post).mockResolvedValue({ data: entry });
     const client = mount("/fuel/1/new");

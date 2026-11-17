@@ -9,6 +9,7 @@ import {
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { dateLabel } from "../../utils/date";
 import { number } from "../../utils/format";
+import { polishPlural } from "../../utils/polishPlural";
 import type { Vehicle } from "../vehicles/api";
 import {
   useDeleteFuel,
@@ -61,7 +62,7 @@ function FuelContent({ vehicle }: { vehicle: Vehicle }) {
             <h2>Historia tankowań</h2>
             <p>
               {query.data
-                ? `Liczba wpisów: ${number(query.data.totalElements)} · `
+                ? `${number(query.data.totalElements)} ${polishPlural(query.data.totalElements, ["wpis", "wpisy", "wpisów"])} · `
                 : ""}
               Koszt i cena za litr bez określonej waluty
             </p>
@@ -90,7 +91,7 @@ function FuelContent({ vehicle }: { vehicle: Vehicle }) {
                 setDeleting(entry);
               }}
             />
-            <div className="pagination">
+            {query.data.content.length > 0 && <div className="pagination">
               <span>
                 Strona {query.data.totalPages ? page + 1 : 0} z{" "}
                 {query.data.totalPages}
@@ -113,7 +114,7 @@ function FuelContent({ vehicle }: { vehicle: Vehicle }) {
                   <ChevronRight size={16} />
                 </button>
               </div>
-            </div>
+            </div>}
           </>
         )}
       </section>

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../../api/errors";
@@ -77,6 +77,34 @@ describe("admin user management", () => {
     expect(api.get).toHaveBeenCalledWith("/api/admin/users", {
       params: { page: 0, size: 10, sort: "createdAt,desc" },
     });
+  });
+
+  it("visibly explains why the administrator's own actions are disabled", async () => {
+    const self = {
+      id: 1,
+      email: "admin@example.test",
+      firstName: "Route",
+      lastName: "Admin",
+      role: "ADMIN" as const,
+      enabled: true,
+      createdAt: "2026-01-01T10:00:00Z",
+    };
+    vi.mocked(api.get).mockImplementation(async (path) => ({
+      data: path === "/api/admin/dashboard"
+        ? dashboard
+        : { ...users, content: [self] },
+    }));
+
+    mountAdmin();
+
+    const row = await screen.findByRole("row", { name: /admin@example\.test/ });
+    expect(
+      within(row).getByText(
+        "Nie możesz zmienić własnej roli ani dezaktywować własnego konta.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(row).getByRole("button", { name: "Zmień na USER" })).toBeDisabled();
+    expect(within(row).getByRole("button", { name: "Dezaktywuj" })).toBeDisabled();
   });
 
   it("confirms role changes and sends the admin API request", async () => {
