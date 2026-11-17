@@ -155,3 +155,30 @@ RouteCost/
 ## Baza danych
 
 Projekt wykorzystuje PostgreSQL. Schemat bazy danych jest zarządzany przez Flyway, który automatycznie wykonuje dostępne migracje podczas uruchamiania aplikacji.
+
+## Konta demonstracyjne
+
+Lokalne środowisko developerskie tworzy trzy przykładowe konta użytkowników. Każde ma rolę `USER`, jest aktywne i używa hasła zahashowanego istniejącym mechanizmem BCrypt.
+
+| Konto | E-mail | Hasło | Zawartość i zastosowanie |
+|---|---|---|---|
+| EMPTY | `demo.empty@routecost.local` | `RouteCostDemo1!` | Jedna Toyota Corolla, bez tankowań, wydatków i przypomnień. Do sprawdzania pustych stanów i pierwszego dodawania danych. |
+| STANDARD | `demo.standard@routecost.local` | `RouteCostDemo2!` | Jedna Skoda Octavia, 6 tankowań, 5 wydatków z różnych kategorii i 3 przypomnienia: zaległe aktywne, nadchodzące aktywne oraz zakończone. Do typowego scenariusza użytkownika. |
+| FULL | `demo.full@routecost.local` | `RouteCostDemo3!` | Toyota Corolla (11 tankowań i 11 wydatków) oraz Kia Ceed (7 tankowań i 7 wydatków), łącznie 18 tankowań i 18 wydatków z różnych kategorii oraz 8 przypomnień o statusach aktywnych, zakończonych i anulowanych. Historia przekracza 10 wpisów dla pierwszego pojazdu, więc pokazuje paginację; daty obejmują wiele miesięcy. Do testowania dashboardu, statystyk, kosztów, spalania, filtrów, paginacji i wykresów. |
+
+Konta są przeznaczone wyłącznie do lokalnego środowiska demonstracyjnego. Seed jest idempotentny: przy każdym starcie sprawdza, czy konto już istnieje; istniejących kont ani ich danych nie zmienia i nie uzupełnia. Hasła nie są wypisywane w logach. Seed działa wyłącznie przy aktywnym profilu Spring `dev` i jest wyłączony, gdy aktywny jest profil `prod` — również wtedy, gdy omyłkowo aktywowano oba profile. Nie powinien być włączany w publicznym wdrożeniu.
+
+Standardowe uruchomienie lokalnego środowiska Docker Compose aktywuje profil `dev` dla backendu:
+
+```bash
+docker compose up --build -d
+```
+
+Aby uruchomić Compose bez seeda (na przykład przy lokalnym sprawdzaniu konfiguracji produkcyjnej), ustaw profil inny niż `dev`:
+
+```powershell
+$env:SPRING_PROFILES_ACTIVE = "prod"
+docker compose up --build -d
+```
+
+Przed kolejnym uruchomieniem developerskim przywróć profil `dev` albo usuń zmienną `SPRING_PROFILES_ACTIVE` z bieżącej sesji PowerShell. Samo zatrzymanie kontenerów nie usuwa bazy ani kont demonstracyjnych. Nie wykorzystuj tych danych logowania w publicznie dostępnym wdrożeniu.

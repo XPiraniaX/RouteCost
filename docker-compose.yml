@@ -38,6 +38,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
       DATABASE_URL: jdbc:postgresql://postgres:5432/routecost
       DB_USERNAME: ${DB_USERNAME:-routecost}
       DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the .env file}
