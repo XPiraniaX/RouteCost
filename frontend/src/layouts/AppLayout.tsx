@@ -50,6 +50,18 @@ export function AppLayout() {
   }, [open]);
   const location = useLocation();
   const notice = (location.state as { notice?: string } | null)?.notice;
+  const currentView =
+    location.pathname === "/"
+      ? "Dashboard"
+      : location.pathname.startsWith("/fuel")
+        ? "Tankowania"
+        : location.pathname.startsWith("/expenses")
+          ? "Wydatki"
+          : location.pathname.startsWith("/reminders")
+            ? "Przypomnienia"
+            : location.pathname.startsWith("/admin")
+              ? "Administracja"
+              : "Pojazdy";
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main">
@@ -78,7 +90,6 @@ export function AppLayout() {
             <X size={20} />
           </button>
         </div>
-        <p className="nav-caption">TWOJA PRZESTRZEŃ</p>
         <nav>
           <NavLink to="/" end onClick={() => setOpen(false)}>
             <LayoutDashboard size={18} />
@@ -107,15 +118,6 @@ export function AppLayout() {
             </NavLink>
           )}
         </nav>
-        <div className="sidebar-bottom">
-          <span className="small-label">ROUTECOST</span>
-          <p>
-            Mniej niewiadomych.
-            <br />
-            Więcej kontroli.
-          </p>
-          <span className="muted">Twoje pojazdy, w jednym miejscu.</span>
-        </div>
       </aside>
       <div className="app-body">
         <header className="topbar">
@@ -130,23 +132,7 @@ export function AppLayout() {
             >
               <Menu size={21} />
             </button>
-            <span>
-              Moja przestrzeń{" "}
-              <span className="muted">
-                /{" "}
-                {location.pathname === "/"
-                  ? "Dashboard"
-                  : location.pathname.startsWith("/fuel")
-                    ? "Tankowania"
-                    : location.pathname.startsWith("/expenses")
-                      ? "Wydatki"
-                      : location.pathname.startsWith("/reminders")
-                        ? "Przypomnienia"
-                      : location.pathname.startsWith("/admin")
-                        ? "Administracja"
-                      : "Pojazdy"}
-              </span>
-            </span>
+            <span>{currentView}</span>
           </div>
           <div className="user-menu">
             <span className="avatar">
@@ -183,10 +169,6 @@ export function AppLayout() {
           )}
           <Outlet />
         </main>
-        <footer className="app-footer">
-          <span>RouteCost · Kontrola zaczyna się od danych.</span>
-          <span>Twoja przestrzeń motoryzacyjna</span>
-        </footer>
       </div>
     </div>
   );

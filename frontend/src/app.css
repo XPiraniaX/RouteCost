@@ -5,7 +5,7 @@
   font: var(--text-base)/1.5 var(--font-body);
 }
 .sidebar {
-  width: 232px;
+  width: 248px;
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 30;
@@ -21,6 +21,17 @@
   align-items: center;
   justify-content: space-between;
 }
+.sidebar-brand .brand-mark {
+  width: 40px;
+  height: 40px;
+}
+.sidebar-brand .brand-mark svg {
+  width: 22px;
+  height: 22px;
+}
+.sidebar-brand > span > span:last-child {
+  font-size: 19px;
+}
 .app-shell .brand-mark {
   background: var(--color-accent-subtle);
   box-shadow: none;
@@ -28,17 +39,11 @@
   border-color: #31574e;
   border-radius: var(--radius-md);
 }
-.nav-caption,
-.small-label,
 .eyebrow {
   font-size: 10px;
   letter-spacing: 0.12em;
   font-weight: 650;
   color: var(--color-muted);
-}
-.nav-caption {
-  padding: 0 12px;
-  margin: 0 0 16px;
 }
 .sidebar nav {
   display: grid;
@@ -80,21 +85,8 @@
   border-radius: 4px;
   padding: 2px 4px;
 }
-.sidebar-bottom {
-  margin: auto 12px 0;
-  padding-top: 40px;
-}
-.sidebar-bottom p {
-  font-size: 18px;
-  letter-spacing: -0.03em;
-  margin: 12px 0;
-  line-height: 1.6;
-}
-.sidebar-bottom > span:last-child {
-  font-size: 11px;
-}
 .app-body {
-  margin-left: 232px;
+  margin-left: 248px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -112,7 +104,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 550;
 }
 .user-menu {
   display: flex;
@@ -149,7 +142,7 @@
 }
 .app-main {
   width: 100%;
-  max-width: 1440px;
+  max-width: 1720px;
   padding: 40px;
   margin: 0 auto;
   flex: 1;
@@ -459,15 +452,6 @@
   font-size: 12px;
   line-height: 1.8;
 }
-.app-footer {
-  padding: 24px 40px;
-  display: flex;
-  gap: 16px;
-  justify-content: space-between;
-  color: var(--color-muted);
-  border-top: var(--border);
-  font-size: 10px;
-}
 .feedback {
   display: flex;
   align-items: flex-start;
@@ -709,10 +693,10 @@
 }
 @media (max-width: 1200px) {
   .sidebar {
-    width: 208px;
+    width: 224px;
   }
   .app-body {
-    margin-left: 208px;
+    margin-left: 224px;
   }
   .app-main {
     padding: 32px 24px;
@@ -788,12 +772,6 @@
     align-items: flex-start;
     flex-wrap: wrap;
   }
-  .app-footer {
-    padding: 20px;
-  }
-  .app-footer span:last-child {
-    display: none;
-  }
   .form-grid {
     grid-template-columns: 1fr;
     gap: 20px;
@@ -833,12 +811,6 @@
   }
   .heading-actions {
     width: 100%;
-  }
-  .topbar-title > span {
-    font-size: 0;
-  }
-  .topbar-title > span > span {
-    font-size: 12px;
   }
   .detail-info {
     gap: 20px;
