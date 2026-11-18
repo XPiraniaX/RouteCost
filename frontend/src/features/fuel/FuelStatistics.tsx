@@ -46,8 +46,8 @@ export function FuelStatistics({ id }: { id: number }) {
         <Stat
           label="Łączny koszt"
           icon={<ReceiptText size={19} />}
-          value={number(data.totalCost)}
-          note="Bez określonej waluty"
+          value={`${number(data.totalCost)} PLN`}
+          note="Kwoty w PLN"
         />
       </section>
       <div className="reminder-strip">

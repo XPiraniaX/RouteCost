@@ -13,7 +13,6 @@ public record ExpenseResponse(
         LocalDate expenseDate,
         ExpenseCategory category,
         BigDecimal amount,
-        String currency,
         String description,
         Integer odometer,
         OffsetDateTime createdAt
@@ -26,7 +25,6 @@ public record ExpenseResponse(
                 expense.getExpenseDate(),
                 expense.getCategory(),
                 expense.getAmount(),
-                expense.getCurrency(),
                 expense.getDescription(),
                 expense.getOdometer(),
                 expense.getCreatedAt()

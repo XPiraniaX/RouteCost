@@ -14,6 +14,11 @@ import pl.routecost.reminder.ReminderStatus;
 import pl.routecost.vehicle.VehicleRepository;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.stream.Stream;
 
 @Service
 public class DashboardService {
@@ -43,6 +48,9 @@ public class DashboardService {
 
     @Transactional(readOnly = true)
     public DashboardSummaryResponse findSummary(Long ownerId) {
+        LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3);
+        BigDecimal totalFuelCost = zeroIfNull(fuelEntryRepository.sumTotalCostByOwnerId(ownerId));
+        BigDecimal totalExpenseCost = zeroIfNull(expenseRepository.sumAmountByOwnerId(ownerId));
         return new DashboardSummaryResponse(
                 vehicleRepository.countByOwner_Id(ownerId),
                 fuelEntryRepository.countByVehicle_Owner_Id(ownerId),
@@ -50,7 +58,11 @@ public class DashboardService {
                 reminderRepository.countByVehicle_Owner_IdAndStatus(ownerId, ReminderStatus.ACTIVE),
                 reminderRepository.countByVehicle_Owner_IdAndStatusAndDueDateBefore(
                         ownerId, ReminderStatus.ACTIVE, LocalDate.now()
-                )
+                ),
+                totalFuelCost.add(totalExpenseCost),
+                totalFuelCost,
+                zeroIfNull(fuelEntryRepository.sumTotalCostByOwnerIdFromDate(ownerId, threeMonthsAgo))
+                        .add(zeroIfNull(expenseRepository.sumAmountByOwnerIdFromDate(ownerId, threeMonthsAgo)))
         );
     }
 
@@ -60,12 +72,33 @@ public class DashboardService {
         var expenseStatistics = expenseService.findExpenseStatistics(ownerId, vehicleId);
         var monthlyFuelCosts = fuelEntryRepository.findMonthlyCostsByVehicleId(vehicleId);
         boolean hasAverageConsumption = fuelStatistics.averageConsumptionLitersPer100Km() != null;
+        BigDecimal expenseTotal = expenseStatistics.totalAmount();
+        BigDecimal totalMaintenanceCost = fuelStatistics.totalCost().add(expenseTotal);
+        LocalDate oldestCostDate = Stream.of(
+                        fuelEntryRepository.findFirstByVehicle_IdOrderByEntryDateAscIdAsc(vehicleId)
+                                .map(entry -> entry.getEntryDate()).orElse(null),
+                        expenseRepository.findFirstByVehicle_IdOrderByExpenseDateAscIdAsc(vehicleId)
+                                .map(expense -> expense.getExpenseDate()).orElse(null)
+                )
+                .filter(date -> date != null)
+                .min(LocalDate::compareTo)
+                .orElse(null);
+        int historyMonthCount = oldestCostDate == null
+                ? 0
+                : (int) ChronoUnit.MONTHS.between(YearMonth.from(oldestCostDate), YearMonth.now()) + 1;
+        boolean hasMaintenanceHistory = historyMonthCount > 0;
+        BigDecimal averageMonthlyMaintenanceCost = hasMaintenanceHistory
+                ? totalMaintenanceCost.divide(BigDecimal.valueOf(historyMonthCount), 2, RoundingMode.HALF_UP)
+                : null;
 
         return new VehicleCostSummaryResponse(
                 vehicleId,
+                totalMaintenanceCost,
+                averageMonthlyMaintenanceCost,
+                historyMonthCount,
+                hasMaintenanceHistory,
                 new FuelCostSummary(
                         fuelStatistics.totalCost(),
-                        null,
                         fuelStatistics.fuelEntryCount(),
                         fuelStatistics.fuelEntryCount() > 0,
                         fuelStatistics.averageConsumptionLitersPer100Km(),
@@ -75,5 +108,9 @@ public class DashboardService {
                 ),
                 expenseStatistics
         );
+    }
+
+    private BigDecimal zeroIfNull(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 }

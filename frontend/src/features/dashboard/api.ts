@@ -7,6 +7,9 @@ export interface DashboardSummary {
   expenseCount: number;
   activeReminderCount: number;
   overdueReminderCount: number;
+  totalMaintenanceCost: number;
+  totalFuelCost: number;
+  maintenanceCostLastThreeMonths: number;
 }
 
 export const useSummary = () => useQuery({

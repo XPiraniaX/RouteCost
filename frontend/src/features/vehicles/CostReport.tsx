@@ -1,6 +1,6 @@
 import { MonthlyChart } from "../../components/charts/MonthlyChart";
 import { number } from "../../utils/format";
-import { Fuel, Gauge } from "lucide-react";
+import { Fuel, Gauge, ReceiptText, CalendarRange } from "lucide-react";
 import { ErrorState, Loading, Stat } from "../../components/ui";
 import { useCosts } from "./api";
 import { polishPlural } from "../../utils/polishPlural";
@@ -32,16 +32,15 @@ export function CostReport({ id }: { id: number }) {
         </div>
       </div>
       <p className="report-note">
-        Koszty paliwa nie mają przypisanej waluty. Pozostałe wydatki są
-        prezentowane osobno dla każdej waluty. Kwoty nie są łączone ani
-        przeliczane.
+        Koszty tankowań i wydatków oraz średnie są prezentowane w PLN. Cena
+        zakupu pojazdu nie jest wliczana do kosztów utrzymania.
       </p>
-      <div className="cost-grid">
+      <div className="cost-grid cost-summary-grid">
         <Stat
-          label="Łączny koszt tankowań"
-          icon={<Fuel size={19} />}
-          value={number(fuel.totalCost)}
-          note={`Bez określonej waluty · ${number(fuel.fuelEntryCount)} ${polishPlural(fuel.fuelEntryCount, ["tankowanie", "tankowania", "tankowań"])}`}
+          label="Łączny koszt utrzymania pojazdu"
+          icon={<ReceiptText size={19} />}
+          value={`${number(query.data.totalMaintenanceCost)} PLN`}
+          note="Tankowania i wydatki · cała historia, bez ceny zakupu"
         />
         <Stat
           label="Średnie spalanie"
@@ -58,12 +57,33 @@ export function CostReport({ id }: { id: number }) {
               : "Brak wystarczających danych do obliczenia spalania."
           }
         />
+        <Stat
+          label="Średni miesięczny koszt utrzymania"
+          icon={<CalendarRange size={19} />}
+          value={
+            query.data.hasMaintenanceHistory &&
+            query.data.averageMonthlyMaintenanceCost !== null
+              ? `${number(query.data.averageMonthlyMaintenanceCost)} PLN`
+              : "Brak danych"
+          }
+          note={
+            query.data.hasMaintenanceHistory
+              ? `Średnia za ${number(query.data.maintenanceHistoryMonthCount)} ${polishPlural(query.data.maintenanceHistoryMonthCount, ["miesiąc kalendarzowy", "miesiące kalendarzowe", "miesięcy kalendarzowych"])}`
+              : "Dodaj tankowanie lub wydatek, aby obliczyć średnią."
+          }
+        />
+        <Stat
+          label="Łączny koszt tankowań"
+          icon={<Fuel size={19} />}
+          value={`${number(fuel.totalCost)} PLN`}
+          note={`${number(fuel.fuelEntryCount)} ${polishPlural(fuel.fuelEntryCount, ["tankowanie", "tankowania", "tankowań"])}`}
+        />
       </div>
       <section className="panel">
         <div className="section-heading">
           <div>
             <h2>Paliwo — koszty miesięczne</h2>
-            <p>Kwoty bez określonej waluty</p>
+            <p>Kwoty w PLN</p>
           </div>
         </div>
         <div className="report-body">
@@ -73,7 +93,7 @@ export function CostReport({ id }: { id: number }) {
                 ...row,
                 amount: row.totalCost,
               }))}
-              label="Koszt paliwa (bez waluty)"
+              label="Koszt paliwa (PLN)"
             />
           ) : (
             <p>Ten pojazd nie ma jeszcze zarejestrowanych tankowań.</p>
@@ -85,51 +105,44 @@ export function CostReport({ id }: { id: number }) {
           <div>
             <h2>Pozostałe wydatki</h2>
             <p>
-              {number(otherExpenses.expenseCount)} {polishPlural(otherExpenses.expenseCount, ["wpis", "wpisy", "wpisów"])} · według walut i kategorii
+              {number(otherExpenses.expenseCount)} {polishPlural(otherExpenses.expenseCount, ["wpis", "wpisy", "wpisów"])} · wszystkie kwoty w PLN
             </p>
           </div>
         </div>
         <div className="report-body">
-          {!otherExpenses.totalsByCurrency.length ? (
+          {!otherExpenses.expenseCount ? (
             <p>Ten pojazd nie ma jeszcze zarejestrowanych wydatków.</p>
           ) : (
-            otherExpenses.totalsByCurrency.map((total) => (
-              <section key={total.currency}>
-                <div className="currency-total">
-                  <strong>{total.currency}</strong>
+            <section>
+                <div className="cost-total">
                   <strong>
-                    {number(total.totalAmount)} {total.currency}
+                    {number(otherExpenses.totalAmount)} PLN
                   </strong>
                 </div>
                 <h3 className="chart-title">
-                  Wydatki według kategorii · {total.currency}
+                  Wydatki według kategorii
                 </h3>
                 <ul className="category-list">
-                  {otherExpenses.totalsByCategory
-                    .filter((row) => row.currency === total.currency)
-                    .map((row) => (
+                  {otherExpenses.totalsByCategory.map((row) => (
                       <li key={row.category}>
                         <span>
                           {categories[row.category] || row.category}{" "}
                           <span className="muted">({row.count})</span>
                         </span>
                         <strong>
-                          {number(row.totalAmount)} {row.currency}
+                          {number(row.totalAmount)} PLN
                         </strong>
                       </li>
                     ))}
                 </ul>
                 <h3 className="chart-title">
-                  Koszty miesięczne · {total.currency}
+                  Koszty miesięczne · PLN
                 </h3>
                 <MonthlyChart
-                  rows={otherExpenses.monthlyTotals
-                    .filter((row) => row.currency === total.currency)
-                    .map((row) => ({ ...row, amount: row.totalAmount }))}
-                  label={`Wydatki (${total.currency})`}
+                  rows={otherExpenses.monthlyTotals.map((row) => ({ ...row, amount: row.totalAmount }))}
+                  label="Wydatki (PLN)"
                 />
-              </section>
-            ))
+            </section>
           )}
         </div>
       </section>

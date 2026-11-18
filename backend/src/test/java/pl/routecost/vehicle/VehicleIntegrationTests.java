@@ -56,6 +56,29 @@ class VehicleIntegrationTests {
     }
 
     @Test
+    void createsVehicleWithoutPurchasePriceAndDefaultsItToZero() throws Exception {
+        String token = createUserToken();
+
+        mockMvc.perform(post("/api/vehicles")
+                        .header("Authorization", bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"make":"Toyota","model":"Corolla","productionYear":2020,
+                                 "fuelType":"PETROL","currentOdometer":50000,
+                                 "purchaseDate":"2020-06-01"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.purchasePrice").value(0));
+
+        mockMvc.perform(post("/api/vehicles")
+                        .header("Authorization", bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(vehicleRequest("Toyota", "Yaris", "PETROL", 20_000)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.purchasePrice").value(12500));
+    }
+
+    @Test
     void preventsOdometerRollbackAndHidesAnotherUsersVehicle() throws Exception {
         String ownerToken = createUserToken();
         String vehicleId = createVehicle(ownerToken, "Toyota", "Corolla", "PETROL", 120_000);

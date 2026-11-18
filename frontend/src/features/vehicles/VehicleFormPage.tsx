@@ -52,7 +52,7 @@ function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
           fuelType: vehicle.fuelType,
           currentOdometer: vehicle.currentOdometer,
           purchaseDate: vehicle.purchaseDate,
-          purchasePrice: vehicle.purchasePrice,
+          purchasePrice: vehicle.purchasePrice || undefined,
         }
       : { make: "", model: "", fuelType: "PETROL", currentOdometer: 0 },
   });
@@ -92,7 +92,7 @@ function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
     "aria-describedby": errors[key] ? `${key}-error` : undefined,
   });
   return (
-    <>
+    <div className="vehicle-form-page">
       <Link className="text-link back-link" to={back}>
         <ArrowLeft size={16} />
         Wróć do {vehicle ? "pojazdu" : "pojazdów"}
@@ -106,7 +106,7 @@ function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
         <div className="section-heading">
           <div>
             <h2>Dane pojazdu</h2>
-            <p>Wszystkie pola są wymagane.</p>
+            <p>Uzupełnij dane pojazdu. Cena zakupu jest opcjonalna.</p>
           </div>
           <span className="badge">{vehicle ? "Edycja" : "Nowy pojazd"}</span>
         </div>
@@ -194,7 +194,7 @@ function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
                 {error("purchaseDate")}
               </label>
               <label className="form-field">
-                <span>Cena zakupu</span>
+                <span>Cena zakupu (opcjonalna)</span>
                 <input
                   aria-label="Cena zakupu"
                   type="number"
@@ -235,6 +235,6 @@ function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
           </fieldset>
         </form>
       </section>
-    </>
+    </div>
   );
 }

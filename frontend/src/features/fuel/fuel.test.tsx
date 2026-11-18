@@ -197,7 +197,7 @@ describe("fuel history and CRUD", () => {
     fireEvent.change(screen.getByLabelText("Ilość paliwa (l)"), {
       target: { value: "42.123" },
     });
-    fireEvent.change(screen.getByLabelText("Całkowity koszt (bez waluty)"), {
+    fireEvent.change(screen.getByLabelText("Całkowity koszt (PLN)"), {
       target: { value: "250" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Dodaj tankowanie" }));

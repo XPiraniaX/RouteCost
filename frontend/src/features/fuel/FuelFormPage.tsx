@@ -112,8 +112,7 @@ function FuelForm({ vehicle, entry }: { vehicle: Vehicle; entry?: FuelEntry }) {
           <div>
             <h2>Dane tankowania</h2>
             <p>
-              Wszystkie wartości są wymagane. Koszt jest zapisywany bez
-              przypisanej waluty.
+              Wszystkie wartości są wymagane. Koszt i cena za litr są w PLN.
             </p>
           </div>
           <span className="badge">{entry ? "Edycja" : "Nowy wpis"}</span>
@@ -165,7 +164,7 @@ function FuelForm({ vehicle, entry }: { vehicle: Vehicle; entry?: FuelEntry }) {
                 {error("liters")}
               </label>
               <label className="form-field">
-                <span>Całkowity koszt (bez waluty)</span>
+                <span>Całkowity koszt (PLN)</span>
                 <input
                   type="number"
                   min="0.01"

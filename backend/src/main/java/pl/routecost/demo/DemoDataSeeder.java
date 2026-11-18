@@ -189,7 +189,6 @@ public class DemoDataSeeder implements ApplicationRunner {
                     date,
                     categories[index % categories.length],
                     amounts[index % amounts.length],
-                    "PLN",
                     descriptions[index % descriptions.length],
                     odometer
             ));

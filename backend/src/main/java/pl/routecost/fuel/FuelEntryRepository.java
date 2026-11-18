@@ -9,10 +9,21 @@ import pl.routecost.dashboard.dto.MonthlyFuelCost;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
+import java.math.BigDecimal;
 
 public interface FuelEntryRepository extends JpaRepository<FuelEntry, Long> {
 
     long countByVehicle_Owner_Id(Long ownerId);
+
+    @Query("select sum(entry.totalCost) from FuelEntry entry where entry.vehicle.owner.id = :ownerId")
+    BigDecimal sumTotalCostByOwnerId(@Param("ownerId") Long ownerId);
+
+    @Query("select sum(entry.totalCost) from FuelEntry entry where entry.vehicle.owner.id = :ownerId and entry.entryDate >= :fromDate")
+    BigDecimal sumTotalCostByOwnerIdFromDate(
+            @Param("ownerId") Long ownerId,
+            @Param("fromDate") LocalDate fromDate
+    );
 
     long countByVehicle_Id(Long vehicleId);
 
@@ -30,6 +41,8 @@ public interface FuelEntryRepository extends JpaRepository<FuelEntry, Long> {
     Page<FuelEntry> findAllByVehicle_Id(Long vehicleId, Pageable pageable);
 
     List<FuelEntry> findAllByVehicle_IdOrderByEntryDateAscIdAsc(Long vehicleId);
+
+    Optional<FuelEntry> findFirstByVehicle_IdOrderByEntryDateAscIdAsc(Long vehicleId);
 
     Optional<FuelEntry> findByIdAndVehicle_Id(Long id, Long vehicleId);
 }

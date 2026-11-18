@@ -27,7 +27,7 @@ export function FuelHistory({
     <div className="table-scroll">
       <table className="data-table fuel-table">
         <caption className="sr-only">
-          Historia tankowań. Kwoty bez określonej waluty.
+          Historia tankowań. Kwoty w PLN.
         </caption>
         <thead>
           <tr>
@@ -57,10 +57,10 @@ export function FuelHistory({
                   maximumFractionDigits: 3,
                 }).format(entry.liters)}
               </td>
-              <td data-label="Koszt (bez waluty)" className="numeric">
+              <td data-label="Koszt (PLN)" className="numeric">
                 {number(entry.totalCost)}
               </td>
-              <td data-label="Cena / l (bez waluty)" className="numeric">
+              <td data-label="Cena / l (PLN)" className="numeric">
                 {new Intl.NumberFormat("pl-PL", {
                   maximumFractionDigits: 4,
                 }).format(entry.pricePerLiter)}

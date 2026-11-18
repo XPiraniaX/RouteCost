@@ -127,7 +127,7 @@ export function FuelCharts({
         <div className="section-heading">
           <div>
             <h2>Koszty miesięczne</h2>
-            <p>Cała historia pojazdu · kwoty bez określonej waluty</p>
+            <p>Cała historia pojazdu · kwoty w PLN</p>
           </div>
         </div>
         <div className="report-body">
@@ -144,7 +144,7 @@ export function FuelCharts({
                 ...row,
                 amount: row.totalCost,
               }))}
-              label="Koszt paliwa (bez waluty)"
+              label="Koszt paliwa (PLN)"
             />
           )}
         </div>

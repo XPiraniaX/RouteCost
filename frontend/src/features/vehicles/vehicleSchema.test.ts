@@ -10,6 +10,9 @@ const valid = {
   purchasePrice: 12345.67,
 };
 describe("vehicle backend constraints", () => {
+  it("defaults an empty purchase price to zero", () => {
+    expect(vehicleSchema().parse({ ...valid, purchasePrice: Number.NaN }).purchasePrice).toBe(0);
+  });
   it("accepts all supported fuels and trims names", () => {
     for (const fuelType of [
       "PETROL",

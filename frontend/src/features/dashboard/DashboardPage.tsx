@@ -6,6 +6,7 @@ import {
   ReceiptText,
   ArrowRight,
   Clock3,
+  CalendarClock,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
@@ -19,12 +20,14 @@ import {
   PageHeader,
   Stat,
 } from "../../components/ui";
+
 export function DashboardPage() {
   const { user } = useAuth();
   const summary = useSummary();
   const vehicles = useVehicles(0, "", 5);
+
   return (
-    <>
+    <div className="dashboard-page">
       <PageHeader
         eyebrow="PRZEGLĄD KONTA"
         title={`Witaj, ${user?.firstName}.`}
@@ -41,7 +44,10 @@ export function DashboardPage() {
         />
       ) : (
         <>
-          <section className="stats-grid" aria-label="Podsumowanie konta">
+          <section
+            className="stats-grid dashboard-stats"
+            aria-label="Podsumowanie konta"
+          >
             <Stat
               label="Pojazdy"
               value={number(summary.data.vehicleCount)}
@@ -73,8 +79,7 @@ export function DashboardPage() {
             <Clock3 size={19} />
             <div>
               <strong>
-                Zaległe przypomnienia:{" "}
-                {number(summary.data.overdueReminderCount)}
+                Zaległe przypomnienia: {number(summary.data.overdueReminderCount)}
               </strong>
               <span>
                 {summary.data.overdueReminderCount
@@ -82,11 +87,13 @@ export function DashboardPage() {
                   : "Żaden zaległy termin nie wymaga Twojej uwagi."}
               </span>
             </div>
-            <span className="badge">Podgląd</span>
+            <Link className="text-link" to="/reminders">
+              Wszystkie przypomnienia <ArrowRight size={16} />
+            </Link>
           </div>
         </>
       )}
-      <section className="panel">
+      <section className="panel dashboard-vehicles">
         <div className="section-heading">
           <div>
             <h2>Twoje pojazdy</h2>
@@ -107,17 +114,31 @@ export function DashboardPage() {
           <VehicleTable vehicles={vehicles.data.content} />
         )}
       </section>
-      <div className="dashboard-note">
-        <ReceiptText size={21} />
-        <div>
-          <h3>Koszty z właściwej perspektywy</h3>
-          <p>
-            Raport każdego pojazdu pokazuje paliwo i pozostałe wydatki osobno, z
-            zachowaniem podziału na waluty.
-          </p>
-        </div>
-        <span className="badge">W szczegółach pojazdu</span>
-      </div>
-    </>
+      {summary.data && (
+        <section
+          className="stats-grid dashboard-cost-stats"
+          aria-label="Koszty utrzymania"
+        >
+          <Stat
+            label="Całkowity koszt utrzymania pojazdów"
+            value={number(summary.data.totalMaintenanceCost)}
+            note="Zapisane kwoty w PLN"
+            icon={<ReceiptText size={19} />}
+          />
+          <Stat
+            label="Całkowity koszt paliwa"
+            value={number(summary.data.totalFuelCost)}
+            note="Cała historia w PLN"
+            icon={<Fuel size={19} />}
+          />
+          <Stat
+            label="Koszt utrzymania · ostatnie 3 miesiące"
+            value={number(summary.data.maintenanceCostLastThreeMonths)}
+            note="Tankowania i wydatki w PLN"
+            icon={<CalendarClock size={19} />}
+          />
+        </section>
+      )}
+    </div>
   );
 }

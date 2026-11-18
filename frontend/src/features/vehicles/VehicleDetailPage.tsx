@@ -73,8 +73,8 @@ export function VehicleDetailPage() {
             </dd>
           </div>
           <div>
-            <dt>Cena zakupu (bez waluty)</dt>
-            <dd>{number(v.purchasePrice)}</dd>
+            <dt>Cena zakupu (PLN)</dt>
+            <dd>{v.purchasePrice > 0 ? `${number(v.purchasePrice)} PLN` : "Brak"}</dd>
           </div>
         </dl>
       </section>

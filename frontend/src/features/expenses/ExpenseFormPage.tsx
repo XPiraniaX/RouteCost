@@ -63,14 +63,12 @@ function ExpenseForm({
           expenseDate: expense.expenseDate,
           category: expense.category,
           amount: expense.amount,
-          currency: expense.currency,
           description: expense.description,
           odometer: expense.odometer,
         }
       : {
           expenseDate: localToday(),
           category: "OTHER",
-          currency: "PLN",
           description: "",
           odometer: null,
         },
@@ -119,13 +117,13 @@ function ExpenseForm({
       <PageHeader
         eyebrow={`${vehicle.make} ${vehicle.model}`}
         title={expense ? "Edytuj wydatek" : "Dodaj wydatek"}
-        description="Zapisz koszt utrzymania pojazdu i walutę z rachunku."
+        description="Zapisz koszt utrzymania pojazdu. Kwoty są zapisywane w PLN."
       />
       <section className="panel form-panel">
         <div className="section-heading">
           <div>
             <h2>Dane wydatku</h2>
-            <p>Kwoty różnych walut są zawsze prezentowane osobno.</p>
+            <p>Wszystkie kwoty są zapisywane i prezentowane w PLN.</p>
           </div>
           <span className="badge">{expense ? "Edycja" : "Nowy wpis"}</span>
         </div>
@@ -161,7 +159,7 @@ function ExpenseForm({
                 {error("category")}
               </label>
               <label className="form-field">
-                <span>Kwota</span>
+                <span>Kwota (PLN)</span>
                 <input
                   type="number"
                   min="0.01"
@@ -172,18 +170,6 @@ function ExpenseForm({
                   {...attrs("amount")}
                 />
                 {error("amount")}
-              </label>
-              <label className="form-field">
-                <span>Waluta (kod ISO 4217)</span>
-                <input
-                  type="text"
-                  maxLength={3}
-                  placeholder="PLN"
-                  autoComplete="off"
-                  {...register("currency")}
-                  {...attrs("currency")}
-                />
-                {error("currency")}
               </label>
               <label className="form-field">
                 <span>Przebieg (opcjonalnie, km)</span>

@@ -27,7 +27,7 @@ export function ExpenseHistory({
     <div className="table-scroll">
       <table className="data-table expense-table expense-history-table">
         <caption className="sr-only">
-          Wydatki pojazdu. Kwoty pozostają rozdzielone według walut.
+          Wydatki pojazdu. Wszystkie kwoty są podane w PLN.
         </caption>
         <thead>
           <tr>
@@ -50,7 +50,7 @@ export function ExpenseHistory({
               <td data-label="Kategoria">{categoryLabel(expense.category)}</td>
               <td data-label="Kwota" className="numeric">
                 <strong>
-                  {number(expense.amount)} {expense.currency}
+                  {number(expense.amount)} PLN
                 </strong>
               </td>
               <td data-label="Opis">

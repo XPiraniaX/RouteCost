@@ -54,7 +54,7 @@ public class OpenApiConfiguration {
             Map.entry("POST /api/vehicles/{vehicleId}/expenses", "Record an expense"),
             Map.entry("PUT /api/vehicles/{vehicleId}/expenses/{expenseId}", "Replace an expense"),
             Map.entry("DELETE /api/vehicles/{vehicleId}/expenses/{expenseId}", "Delete an expense"),
-            Map.entry("GET /api/vehicles/{vehicleId}/expense-statistics", "Get expense statistics by currency"),
+            Map.entry("GET /api/vehicles/{vehicleId}/expense-statistics", "Get expense statistics in PLN"),
             Map.entry("GET /api/vehicles/{vehicleId}/reminders", "List vehicle reminders"),
             Map.entry("GET /api/vehicles/{vehicleId}/reminders/{reminderId}", "Get a reminder"),
             Map.entry("POST /api/vehicles/{vehicleId}/reminders", "Create a reminder"),
@@ -149,7 +149,7 @@ public class OpenApiConfiguration {
         }
         if (path.equals("/api/auth/me")) return "Wymaga Bearer access tokenu JWT.";
         if (path.contains("/fuel-statistics")) return "Średnie spalanie jest obliczane z odstępów pomiędzy kolejnymi pełnymi tankowaniami.";
-        if (path.contains("/expense-statistics")) return "Sumy są grupowane według waluty i nie łączą różnych walut.";
+        if (path.contains("/expense-statistics")) return "Wszystkie kwoty są wyrażone w PLN.";
         if (path.contains("/reminders")) return "Przypomnienia są przypisane do pojazdu i podlegają regułom przejść statusów.";
         if (path.contains("/fuel-entries") || path.contains("/expenses") || path.contains("/vehicles")) {
             return "Zasób jest dostępny tylko właścicielowi pojazdu. Parametry i pola żądania wynikają ze schematu.";

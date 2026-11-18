@@ -15,7 +15,6 @@ import pl.routecost.fuel.exception.FuelEntryNotFoundException;
 import pl.routecost.expense.exception.ExpenseChronologyException;
 import pl.routecost.expense.exception.ExpenseDateRangeException;
 import pl.routecost.expense.exception.ExpenseNotFoundException;
-import pl.routecost.expense.exception.InvalidExpenseCurrencyException;
 import pl.routecost.vehicle.exception.OdometerRollbackException;
 import pl.routecost.vehicle.exception.VehicleNotFoundException;
 import pl.routecost.reminder.exception.InvalidReminderStatusTransitionException;
@@ -109,14 +108,6 @@ public class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(
                 HttpStatus.BAD_REQUEST,
                 "The start date must not be after the end date."
-        );
-    }
-
-    @ExceptionHandler(InvalidExpenseCurrencyException.class)
-    ProblemDetail handleInvalidExpenseCurrency(InvalidExpenseCurrencyException exception) {
-        return ProblemDetail.forStatusAndDetail(
-                HttpStatus.BAD_REQUEST,
-                "Currency must be a supported ISO 4217 currency code."
         );
     }
 

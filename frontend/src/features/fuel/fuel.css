@@ -16,35 +16,12 @@
 .fuel-stats .stat > strong {
   font-size: 24px;
 }
+.fuel-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+}
 .expense-stats .stat > strong {
   font-size: 24px;
-}
-.expense-currency-panel {
-  margin-bottom: var(--space-6);
-}
-.expense-currency-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: var(--space-3);
-}
-.expense-currency-total {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-4);
-  border: var(--border);
-  border-radius: var(--radius-md);
-  background: var(--color-raised);
-}
-.expense-currency-total > span {
-  color: var(--color-muted);
-  font-size: var(--text-sm);
-}
-.expense-currency-total > strong {
-  font-size: 20px;
-}
-.expense-currency-total > small {
-  color: var(--color-muted);
 }
 .expense-filters {
   display: grid;
@@ -170,6 +147,9 @@
   }
 }
 @media (max-width: 760px) {
+  .fuel-stats {
+    grid-template-columns: 1fr;
+  }
   .vehicle-toolbar {
     align-items: stretch;
   }

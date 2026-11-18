@@ -22,6 +22,11 @@ public record VehicleRequest(
         @NotNull FuelType fuelType,
         @PositiveOrZero int currentOdometer,
         @NotNull @PastOrPresent LocalDate purchaseDate,
-        @NotNull @DecimalMin("0.00") @Digits(integer = 10, fraction = 2) BigDecimal purchasePrice
+        @DecimalMin("0.00") @Digits(integer = 10, fraction = 2) BigDecimal purchasePrice
 ) {
+    public VehicleRequest {
+        if (purchasePrice == null) {
+            purchasePrice = BigDecimal.ZERO;
+        }
+    }
 }

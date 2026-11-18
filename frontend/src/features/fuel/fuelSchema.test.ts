@@ -14,7 +14,6 @@ describe("fuel DTO validation", () => {
       fuelSchema("2020-01-01").parse({
         ...valid,
         pricePerLiter: 6,
-        currency: "PLN",
       }),
     ).toEqual(valid);
   });

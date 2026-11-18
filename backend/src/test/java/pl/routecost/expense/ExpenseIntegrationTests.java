@@ -2,6 +2,7 @@ package pl.routecost.expense;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -29,6 +30,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(properties = "routecost.jwt.secret-base64=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")
 @org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
@@ -40,6 +42,9 @@ class ExpenseIntegrationTests {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Autowired
     private UserRepository userRepository;
@@ -54,12 +59,24 @@ class ExpenseIntegrationTests {
     private JwtService jwtService;
 
     @Test
+    void schemaStoresExpenseAmountsWithoutCurrencyColumn() {
+        Integer currencyColumns = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND table_name = 'expenses'
+                  AND column_name = 'currency'
+                """, Integer.class);
+
+        assertEquals(0, currencyColumns);
+    }
+
+    @Test
     void createsFiltersAndSummarizesExpensesSeparatelyFromFuel() throws Exception {
         String token = createUserToken();
         Long vehicleId = createVehicle(ownerId(token));
-        createExpense(token, vehicleId, "2024-01-15", "REPAIR", "100.00", "PLN", null);
-        createExpense(token, vehicleId, "2024-02-02", "PARTS", "50.00", "PLN", null);
-        createExpense(token, vehicleId, "2024-02-03", "INSURANCE", "20.00", "EUR", null);
+        createExpense(token, vehicleId, "2024-01-15", "REPAIR", "100.00", null);
+        createExpense(token, vehicleId, "2024-02-02", "PARTS", "50.00", null);
+        createExpense(token, vehicleId, "2024-02-03", "INSURANCE", "20.00", null);
         fuelEntryRepository.saveAndFlush(new FuelEntry(
                 vehicleRepository.findById(vehicleId).orElseThrow(),
                 LocalDate.of(2024, 2, 5),
@@ -79,23 +96,21 @@ class ExpenseIntegrationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].category").value("PARTS"))
+                .andExpect(jsonPath("$.content[0].amount").value(50))
+                .andExpect(jsonPath("$.content[0].currency").doesNotExist())
                 .andExpect(jsonPath("$.totalElements").value(1));
 
         mockMvc.perform(get("/api/vehicles/{vehicleId}/expense-statistics", vehicleId)
                         .header("Authorization", bearer(token)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.expenseCount").value(3))
-                .andExpect(jsonPath("$.totalsByCurrency.length()").value(2))
-                .andExpect(jsonPath("$.totalsByCurrency[0].currency").value("EUR"))
-                .andExpect(jsonPath("$.totalsByCurrency[0].totalAmount").value(20))
-                .andExpect(jsonPath("$.totalsByCurrency[1].currency").value("PLN"))
-                .andExpect(jsonPath("$.totalsByCurrency[1].totalAmount").value(150))
+                .andExpect(jsonPath("$.totalAmount").value(170))
                 .andExpect(jsonPath("$.totalsByCategory.length()").value(3))
-                .andExpect(jsonPath("$.monthlyTotals.length()").value(3));
+                .andExpect(jsonPath("$.monthlyTotals.length()").value(2));
     }
 
     @Test
-    void validatesAmountDateCurrencyAndMileageChronology() throws Exception {
+    void validatesAmountDateAndMileageChronologyWithoutCurrencyInput() throws Exception {
         String token = createUserToken();
         Long vehicleId = createVehicle(ownerId(token));
         Vehicle vehicle = vehicleRepository.findById(vehicleId).orElseThrow();
@@ -119,32 +134,28 @@ class ExpenseIntegrationTests {
         mockMvc.perform(post("/api/vehicles/{vehicleId}/expenses", vehicleId)
                         .header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(request("2024-02-01", "REPAIR", "0.00", "PLN", null, null)))
+                        .content(request("2024-02-01", "REPAIR", "0.00", null, null)))
                 .andExpect(status().isBadRequest());
 
         mockMvc.perform(post("/api/vehicles/{vehicleId}/expenses", vehicleId)
                         .header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(request("2024-02-01", "REPAIR", "25.00", "pln", null, null)))
+                        .content(request("2999-02-01", "REPAIR", "25.00", null, null)))
                 .andExpect(status().isBadRequest());
 
         mockMvc.perform(post("/api/vehicles/{vehicleId}/expenses", vehicleId)
                         .header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(request("2999-02-01", "REPAIR", "25.00", "PLN", null, null)))
+                        .content(request("2024-02-01", "REPAIR", "25.00", 9_000, null)))
                 .andExpect(status().isBadRequest());
 
         mockMvc.perform(post("/api/vehicles/{vehicleId}/expenses", vehicleId)
                         .header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(request("2024-02-01", "REPAIR", "25.00", "PLN", 9_000, null)))
-                .andExpect(status().isBadRequest());
-
-        mockMvc.perform(post("/api/vehicles/{vehicleId}/expenses", vehicleId)
-                        .header("Authorization", bearer(token))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(request("2024-02-01", "REPAIR", "25.00", "PLN", 11_000, null)))
-                .andExpect(status().isCreated());
+                        .content(request("2024-02-01", "REPAIR", "25.00", 11_000, null)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.amount").value(25))
+                .andExpect(jsonPath("$.currency").doesNotExist());
     }
 
     @Test
@@ -152,7 +163,7 @@ class ExpenseIntegrationTests {
         String ownerToken = createUserToken();
         Long vehicleId = createVehicle(ownerId(ownerToken));
         String expenseId = createExpense(
-                ownerToken, vehicleId, "2024-02-01", "SERVICE", "125.00", "PLN", 11_000
+                ownerToken, vehicleId, "2024-02-01", "SERVICE", "125.00", 11_000
         );
         String otherUserToken = createUserToken();
 
@@ -167,15 +178,16 @@ class ExpenseIntegrationTests {
         mockMvc.perform(put("/api/vehicles/{vehicleId}/expenses/{expenseId}", vehicleId, expenseId)
                         .header("Authorization", bearer(otherUserToken))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(request("2024-02-01", "SERVICE", "150.00", "PLN", 11_000, null)))
+                        .content(request("2024-02-01", "SERVICE", "150.00", 11_000, null)))
                 .andExpect(status().isNotFound());
 
         mockMvc.perform(put("/api/vehicles/{vehicleId}/expenses/{expenseId}", vehicleId, expenseId)
                         .header("Authorization", bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(request("2024-02-01", "SERVICE", "150.00", "PLN", 11_000, "Changed")))
+                        .content(request("2024-02-01", "SERVICE", "150.00", 11_000, "Changed")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.amount").value(150))
+                .andExpect(jsonPath("$.currency").doesNotExist())
                 .andExpect(jsonPath("$.description").value("Changed"));
 
         mockMvc.perform(delete("/api/vehicles/{vehicleId}/expenses/{expenseId}", vehicleId, expenseId)
@@ -212,13 +224,12 @@ class ExpenseIntegrationTests {
             String date,
             String category,
             String amount,
-            String currency,
             Integer odometer
     ) throws Exception {
         String response = mockMvc.perform(post("/api/vehicles/{vehicleId}/expenses", vehicleId)
                         .header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(request(date, category, amount, currency, odometer, null)))
+                        .content(request(date, category, amount, odometer, null)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -250,16 +261,15 @@ class ExpenseIntegrationTests {
             String date,
             String category,
             String amount,
-            String currency,
             Integer odometer,
             String description
     ) {
         String odometerJson = odometer == null ? "null" : odometer.toString();
         String descriptionJson = description == null ? "null" : "\"" + description + "\"";
         return """
-                {"expenseDate":"%s","category":"%s","amount":%s,"currency":"%s",
+                {"expenseDate":"%s","category":"%s","amount":%s,
                  "description":%s,"odometer":%s}
-                """.formatted(date, category, amount, currency, descriptionJson, odometerJson);
+                """.formatted(date, category, amount, descriptionJson, odometerJson);
     }
 
     private String bearer(String token) {

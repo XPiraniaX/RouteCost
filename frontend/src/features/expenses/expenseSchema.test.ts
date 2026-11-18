@@ -5,7 +5,6 @@ const validExpense = {
   expenseDate: "2025-06-15",
   category: "REPAIR",
   amount: 120.5,
-  currency: "pln",
   description: null,
   odometer: null,
 };
@@ -13,11 +12,8 @@ const validExpense = {
 describe("expenseSchema", () => {
   const schema = expenseSchema("2020-01-01");
 
-  it("accepts valid expense data and normalizes the currency", () => {
-    expect(schema.parse(validExpense)).toMatchObject({
-      ...validExpense,
-      currency: "PLN",
-    });
+  it("accepts valid expense data without a currency field", () => {
+    expect(schema.parse(validExpense)).toEqual(validExpense);
   });
 
   it("rejects dates before purchase and future dates", () => {
@@ -29,14 +25,11 @@ describe("expenseSchema", () => {
     ).toBe(false);
   });
 
-  it("enforces positive two-decimal amounts and a three-letter currency code", () => {
+  it("enforces positive two-decimal amounts", () => {
     expect(schema.safeParse({ ...validExpense, amount: 0 }).success).toBe(
       false,
     );
     expect(schema.safeParse({ ...validExpense, amount: 1.234 }).success).toBe(
-      false,
-    );
-    expect(schema.safeParse({ ...validExpense, currency: "PL" }).success).toBe(
       false,
     );
   });

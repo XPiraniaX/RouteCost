@@ -64,7 +64,7 @@ function FuelContent({ vehicle }: { vehicle: Vehicle }) {
               {query.data
                 ? `${number(query.data.totalElements)} ${polishPlural(query.data.totalElements, ["wpis", "wpisy", "wpisów"])} · `
                 : ""}
-              Koszt i cena za litr bez określonej waluty
+              Koszt i cena za litr są podawane w PLN
             </p>
           </div>
           <label className="filter-label">

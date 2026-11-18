@@ -12,8 +12,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import pl.routecost.vehicle.Vehicle;
 
 import java.math.BigDecimal;
@@ -42,10 +40,6 @@ public class Expense {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
 
-    @JdbcTypeCode(SqlTypes.CHAR)
-    @Column(nullable = false, length = 3, columnDefinition = "char(3)")
-    private String currency;
-
     @Column(length = 1000)
     private String description;
 
@@ -64,26 +58,23 @@ public class Expense {
             LocalDate expenseDate,
             ExpenseCategory category,
             BigDecimal amount,
-            String currency,
             String description,
             Integer odometer
     ) {
         this.vehicle = vehicle;
-        updateDetails(expenseDate, category, amount, currency, description, odometer);
+        updateDetails(expenseDate, category, amount, description, odometer);
     }
 
     public void updateDetails(
             LocalDate expenseDate,
             ExpenseCategory category,
             BigDecimal amount,
-            String currency,
             String description,
             Integer odometer
     ) {
         this.expenseDate = expenseDate;
         this.category = category;
         this.amount = amount;
-        this.currency = currency;
         this.description = description == null || description.isBlank() ? null : description.trim();
         this.odometer = odometer;
     }
@@ -113,10 +104,6 @@ public class Expense {
 
     public BigDecimal getAmount() {
         return amount;
-    }
-
-    public String getCurrency() {
-        return currency;
     }
 
     public String getDescription() {

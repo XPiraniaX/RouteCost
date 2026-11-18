@@ -39,11 +39,16 @@ export const vehicleSchema = (minimumOdometer = 0) =>
         "Data zakupu nie może być w przyszłości.",
       ),
     purchasePrice: z
-      .number({ error: "Podaj cenę zakupu." })
-      .min(0, "Cena nie może być ujemna.")
-      .max(9999999999.99, "Maksymalnie 10 cyfr przed przecinkiem.")
-      .refine(
-        (value) => Math.abs(value * 100 - Math.round(value * 100)) < 0.0002,
-        "Podaj maksymalnie 2 miejsca po przecinku.",
+      .union([z.number(), z.nan()])
+      .transform((value) => (Number.isNaN(value) ? 0 : value))
+      .pipe(
+        z
+          .number({ error: "Podaj cenę zakupu." })
+          .min(0, "Cena nie może być ujemna.")
+          .max(9999999999.99, "Maksymalnie 10 cyfr przed przecinkiem.")
+          .refine(
+            (value) => Math.abs(value * 100 - Math.round(value * 100)) < 0.0002,
+            "Podaj maksymalnie 2 miejsca po przecinku.",
+          ),
       ),
   });

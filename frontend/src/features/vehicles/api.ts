@@ -32,9 +32,12 @@ export interface VehiclePage {
 }
 export interface CostSummary {
   vehicleId: number;
+  totalMaintenanceCost: number;
+  averageMonthlyMaintenanceCost: number | null;
+  maintenanceHistoryMonthCount: number;
+  hasMaintenanceHistory: boolean;
   fuel: {
     totalCost: number;
-    currency: null;
     fuelEntryCount: number;
     hasFuelData: boolean;
     averageConsumptionLitersPer100Km: number | null;
@@ -49,21 +52,15 @@ export interface CostSummary {
   };
   otherExpenses: {
     expenseCount: number;
-    totalsByCurrency: {
-      currency: string;
-      totalAmount: number;
-      count: number;
-    }[];
+    totalAmount: number;
     totalsByCategory: {
       category: string;
-      currency: string;
       totalAmount: number;
       count: number;
     }[];
     monthlyTotals: {
       year: number;
       month: number;
-      currency: string;
       totalAmount: number;
       count: number;
     }[];

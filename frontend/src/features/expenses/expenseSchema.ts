@@ -29,11 +29,6 @@ export const expenseSchema = (purchaseDate: string) =>
         (value) => Number(value.toFixed(2)) === value,
         "Podaj maksymalnie 2 miejsca po przecinku.",
       ),
-    currency: z
-      .string()
-      .trim()
-      .toUpperCase()
-      .regex(/^[A-Z]{3}$/, "Podaj trzyliterowy kod waluty, np. EUR."),
     description: z
       .string()
       .max(1000, "Opis może mieć maksymalnie 1000 znaków.")

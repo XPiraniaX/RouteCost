@@ -231,7 +231,7 @@ class AdminIntegrationTests {
         ));
         expenseRepository.saveAndFlush(new Expense(
                 vehicle, LocalDate.of(2021, 2, 1), ExpenseCategory.SERVICE,
-                new BigDecimal("150.00"), "PLN", "Private description", 10_500
+                new BigDecimal("150.00"), "Private description", 10_500
         ));
         reminderRepository.saveAndFlush(new Reminder(
                 vehicle, pl.routecost.reminder.ReminderType.SERVICE,

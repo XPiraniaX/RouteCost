@@ -17,7 +17,6 @@ export interface ExpenseRequest {
   expenseDate: string;
   category: ExpenseCategory;
   amount: number;
-  currency: string;
   description: string | null;
   odometer: number | null;
 }
@@ -36,17 +35,15 @@ export interface ExpensePage {
 export interface ExpenseStatistics {
   vehicleId: number;
   expenseCount: number;
-  totalsByCurrency: { currency: string; totalAmount: number; count: number }[];
+  totalAmount: number;
   totalsByCategory: {
     category: ExpenseCategory;
-    currency: string;
     totalAmount: number;
     count: number;
   }[];
   monthlyTotals: {
     year: number;
     month: number;
-    currency: string;
     totalAmount: number;
     count: number;
   }[];

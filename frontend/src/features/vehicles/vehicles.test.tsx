@@ -7,6 +7,7 @@ import { api } from "../../api/http";
 import { ApiError } from "../../api/errors";
 import { VehiclesPage } from "./VehiclesPage";
 import { VehicleFormPage } from "./VehicleFormPage";
+import { VehicleDetailPage } from "./VehicleDetailPage";
 import { DashboardPage } from "../dashboard/DashboardPage";
 import { CostReport } from "./CostReport";
 import { DeleteVehicleDialog } from "./DeleteVehicleDialog";
@@ -52,12 +53,17 @@ describe("dashboard and vehicle data", () => {
               expenseCount: 3,
               activeReminderCount: 2,
               overdueReminderCount: 1,
+              totalMaintenanceCost: 15750,
+              totalFuelCost: 12500,
+              maintenanceCostLastThreeMonths: 4000,
             }
           : { content: [vehicle], totalElements: 1, totalPages: 1 },
     }));
     mount(<DashboardPage />);
     expect(await screen.findByText("Toyota Corolla")).toBeInTheDocument();
     expect(screen.getByText("Zaległe przypomnienia: 1")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Wszystkie przypomnienia/ })).toHaveAttribute("href", "/reminders");
+    expect(screen.queryByText("Koszty z właściwej perspektywy")).not.toBeInTheDocument();
     expect(api.get).toHaveBeenCalledWith("/api/dashboard/summary");
   });
   it("sends server filtering and pagination parameters", async () => {
@@ -107,7 +113,7 @@ describe("dashboard and vehicle data", () => {
     fireEvent.change(screen.getByLabelText("Data zakupu"), {
       target: { value: "2020-06-01" },
     });
-    await user.type(screen.getByLabelText("Cena zakupu"), "50000");
+    await user.type(screen.getByLabelText(/Cena zakupu/), "50000");
     await user.click(screen.getByRole("button", { name: "Dodaj pojazd" }));
     await waitFor(() =>
       expect(api.post).toHaveBeenCalledWith(
@@ -124,10 +130,63 @@ describe("dashboard and vehicle data", () => {
     );
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["vehicles"] });
   });
-  it("preserves currency boundaries and unavailable consumption", async () => {
+  it("creates a vehicle with an empty purchase price as zero", async () => {
+    vi.mocked(api.post).mockResolvedValue({ data: { ...vehicle, purchasePrice: 0 } });
+    mount(<VehicleFormPage />);
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText("Marka"), "Toyota");
+    await user.type(screen.getByLabelText("Model"), "Corolla");
+    await user.type(screen.getByLabelText("Rok produkcji"), "2020");
+    fireEvent.change(screen.getByLabelText("Data zakupu"), {
+      target: { value: "2020-06-01" },
+    });
+    await user.click(screen.getByRole("button", { name: "Dodaj pojazd" }));
+
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith(
+        "/api/vehicles",
+        expect.objectContaining({ purchasePrice: 0 }),
+      ),
+    );
+  });
+  it("shows an unspecified zero purchase price as Brak", async () => {
+    vi.mocked(api.get).mockImplementation(async (path) => ({
+      data: path.endsWith("cost-summary")
+        ? {
+            vehicleId: 1,
+            totalMaintenanceCost: 0,
+            averageMonthlyMaintenanceCost: null,
+            maintenanceHistoryMonthCount: 0,
+            hasMaintenanceHistory: false,
+            fuel: {
+              totalCost: 0,
+              fuelEntryCount: 0,
+              hasFuelData: false,
+              averageConsumptionAvailable: false,
+              averageConsumptionLitersPer100Km: null,
+              monthlyTotals: [],
+            },
+            otherExpenses: { expenseCount: 0, totalAmount: 0, totalsByCategory: [], monthlyTotals: [] },
+          }
+        : { ...vehicle, purchasePrice: 0 },
+    }));
+    mount(
+      <Routes>
+        <Route path="/vehicles/:vehicleId" element={<VehicleDetailPage />} />
+      </Routes>,
+      "/vehicles/1",
+    );
+
+    expect(await screen.findByText("Brak")).toBeInTheDocument();
+  });
+  it("presents expense totals in PLN and handles unavailable consumption", async () => {
     vi.mocked(api.get).mockResolvedValue({
       data: {
         vehicleId: 1,
+        totalMaintenanceCost: 170,
+        averageMonthlyMaintenanceCost: 170,
+        maintenanceHistoryMonthCount: 1,
+        hasMaintenanceHistory: true,
         fuel: {
           totalCost: 0,
           fuelEntryCount: 0,
@@ -138,20 +197,17 @@ describe("dashboard and vehicle data", () => {
         },
         otherExpenses: {
           expenseCount: 2,
-          totalsByCurrency: [
-            { currency: "PLN", totalAmount: 100 },
-            { currency: "EUR", totalAmount: 50 },
-          ],
+          totalAmount: 150,
           totalsByCategory: [],
           monthlyTotals: [],
         },
       },
     });
     mount(<CostReport id={1} />);
-    expect(await screen.findByText("100 PLN")).toBeInTheDocument();
-    expect(screen.getByText("50 EUR")).toBeInTheDocument();
+    expect(await screen.findByText("150 PLN")).toBeInTheDocument();
+    expect(screen.queryByText("EUR")).not.toBeInTheDocument();
+    expect(screen.getAllByText("170 PLN")).toHaveLength(2);
     expect(screen.getByText("Brak danych")).toBeInTheDocument();
-    expect(screen.queryByText("150")).not.toBeInTheDocument();
   });
   it("loads an existing vehicle and saves edits with PUT", async () => {
     vi.mocked(api.get).mockResolvedValue({ data: vehicle });

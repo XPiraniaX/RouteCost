@@ -88,7 +88,7 @@ export function ExpenseContent({ vehicle }: { vehicle: Vehicle }) {
               {query.data
                 ? `${number(query.data.totalElements)} ${polishPlural(query.data.totalElements, ["wpis", "wpisy", "wpisów"])} · `
                 : ""}
-              kwoty są oznaczone walutą
+              kwoty w PLN
             </p>
           </div>
           <label className="filter-label">
@@ -202,7 +202,7 @@ export function ExpenseContent({ vehicle }: { vehicle: Vehicle }) {
             <>
               Wydatek „{categoryLabel(deleting.category)}” z{" "}
               {dateLabel(deleting.expenseDate)} w wysokości{" "}
-              {number(deleting.amount)} {deleting.currency} zostanie trwale
+              {number(deleting.amount)} PLN zostanie trwale
               usunięty. Tej operacji nie można cofnąć.
             </>
           }
