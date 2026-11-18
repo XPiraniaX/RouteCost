@@ -11,6 +11,8 @@ import { VehicleDetailPage } from "./VehicleDetailPage";
 import { DashboardPage } from "../dashboard/DashboardPage";
 import { CostReport } from "./CostReport";
 import { DeleteVehicleDialog } from "./DeleteVehicleDialog";
+import { ExpensePage } from "../expenses/ExpensesPage";
+import { RemindersPage } from "../reminders/RemindersPage";
 import type { Vehicle } from "./api";
 
 vi.mock("../../api/http", () => ({
@@ -41,6 +43,40 @@ const vehicle: Vehicle = {
   purchasePrice: 50000,
   createdAt: "2026-01-01T10:00:00Z",
 };
+const secondVehicle: Vehicle = {
+  ...vehicle,
+  id: 2,
+  make: "Skoda",
+  model: "Octavia",
+};
+
+function mockVehicleDetailAndWorkspace() {
+  vi.mocked(api.get).mockImplementation(async (path) => {
+    if (path === "/api/vehicles")
+      return {
+        data: { content: [vehicle, secondVehicle], page: 0, size: 50, totalElements: 2, totalPages: 1 },
+      };
+    if (path === "/api/vehicles/1") return { data: vehicle };
+    if (path === "/api/vehicles/2") return { data: secondVehicle };
+    if (path.endsWith("/cost-summary"))
+      return {
+        data: {
+          vehicleId: Number(path.split("/")[3]),
+          totalMaintenanceCost: 0,
+          averageMonthlyMaintenanceCost: null,
+          maintenanceHistoryMonthCount: 0,
+          hasMaintenanceHistory: false,
+          fuel: { totalCost: 0, fuelEntryCount: 0, hasFuelData: false, averageConsumptionLitersPer100Km: null, averageConsumptionAvailable: false, monthlyTotals: [] },
+          otherExpenses: { expenseCount: 0, totalAmount: 0, totalsByCategory: [], monthlyTotals: [] },
+        },
+      };
+    if (path.endsWith("/expense-statistics"))
+      return { data: { vehicleId: Number(path.split("/")[3]), expenseCount: 0, totalAmount: 0, totalsByCategory: [], monthlyTotals: [] } };
+    if (path.endsWith("/expenses") || path.endsWith("/reminders"))
+      return { data: { content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 } };
+    return { data: {} };
+  });
+}
 beforeEach(() => vi.resetAllMocks());
 describe("dashboard and vehicle data", () => {
   it("loads real summary and vehicle endpoints", async () => {
@@ -178,6 +214,78 @@ describe("dashboard and vehicle data", () => {
     );
 
     expect(await screen.findByText("Brak")).toBeInTheDocument();
+  });
+  it("opens expenses for this vehicle and lets the user switch the selected vehicle", async () => {
+    mockVehicleDetailAndWorkspace();
+    mount(
+      <Routes>
+        <Route path="/vehicles/:vehicleId" element={<VehicleDetailPage />} />
+        <Route path="/expenses" element={<ExpensePage />} />
+      </Routes>,
+      "/vehicles/1",
+    );
+
+    const detailHeading = await screen.findByRole("heading", { name: "Toyota Corolla" });
+    const actions = detailHeading.closest("header")?.querySelector(".heading-actions");
+    expect(actions?.querySelectorAll("a, button")).toHaveLength(5);
+    expect(screen.getByRole("link", { name: "Wydatki" })).toHaveAttribute(
+      "href",
+      "/expenses?vehicleId=1",
+    );
+    fireEvent.click(screen.getByRole("link", { name: "Wydatki" }));
+
+    expect(await screen.findByRole("heading", { name: "Wydatki" })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith(
+        "/api/vehicles/1/expenses",
+        expect.objectContaining({ params: expect.objectContaining({ page: 0 }) }),
+      ),
+    );
+
+    fireEvent.change(screen.getByLabelText("Wybrany pojazd"), {
+      target: { value: "2" },
+    });
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith(
+        "/api/vehicles/2/expenses",
+        expect.objectContaining({ params: expect.objectContaining({ page: 0 }) }),
+      ),
+    );
+  });
+  it("opens reminders for this vehicle and lets the user switch the selected vehicle", async () => {
+    mockVehicleDetailAndWorkspace();
+    mount(
+      <Routes>
+        <Route path="/vehicles/:vehicleId" element={<VehicleDetailPage />} />
+        <Route path="/reminders" element={<RemindersPage />} />
+      </Routes>,
+      "/vehicles/1",
+    );
+
+    expect(await screen.findByRole("heading", { name: "Toyota Corolla" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Przypomnienia" })).toHaveAttribute(
+      "href",
+      "/reminders?vehicleId=1",
+    );
+    fireEvent.click(screen.getByRole("link", { name: "Przypomnienia" }));
+
+    expect(await screen.findByRole("heading", { name: "Przypomnienia" })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith(
+        "/api/vehicles/1/reminders",
+        expect.objectContaining({ params: expect.objectContaining({ page: 0 }) }),
+      ),
+    );
+
+    fireEvent.change(screen.getByLabelText("Wybrany pojazd"), {
+      target: { value: "2" },
+    });
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith(
+        "/api/vehicles/2/reminders",
+        expect.objectContaining({ params: expect.objectContaining({ page: 0 }) }),
+      ),
+    );
   });
   it("presents expense totals in PLN and handles unavailable consumption", async () => {
     vi.mocked(api.get).mockResolvedValue({

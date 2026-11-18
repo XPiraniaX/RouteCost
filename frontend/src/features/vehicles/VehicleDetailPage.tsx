@@ -1,7 +1,7 @@
 import { number } from "../../utils/format";
 import { lazy, Suspense, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Fuel, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Bell, Fuel, Pencil, ReceiptText, Trash2 } from "lucide-react";
 import { ErrorState, Loading, PageHeader } from "../../components/ui";
 import { fuels, useVehicle } from "./api";
 import { DeleteVehicleDialog } from "./DeleteVehicleDialog";
@@ -37,6 +37,14 @@ export function VehicleDetailPage() {
         <Link className="button button-secondary" to={`/fuel?vehicleId=${id}`}>
           <Fuel size={15} />
           Tankowania
+        </Link>
+        <Link className="button button-secondary" to={`/expenses?vehicleId=${id}`}>
+          <ReceiptText size={15} />
+          Wydatki
+        </Link>
+        <Link className="button button-secondary" to={`/reminders?vehicleId=${id}`}>
+          <Bell size={15} />
+          Przypomnienia
         </Link>
         <Link className="button button-secondary" to={`/vehicles/${id}/edit`}>
           <Pencil size={15} />
