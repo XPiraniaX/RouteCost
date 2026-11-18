@@ -3,9 +3,9 @@
 }
 .reminder-filters {
   display: grid;
-  grid-template-columns: repeat(2, minmax(180px, 240px));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
-  padding: 0 24px 20px;
+  padding: 20px 24px;
 }
 .reminder-filters .form-field {
   min-width: 0;
@@ -84,7 +84,7 @@
 @media (max-width: 760px) {
   .reminder-filters {
     grid-template-columns: 1fr;
-    padding: 0 20px 20px;
+    padding: 20px 20px;
   }
   .reminder-table {
     min-width: 0;

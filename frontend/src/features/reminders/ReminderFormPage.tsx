@@ -122,7 +122,7 @@ export function ReminderForm({
   };
 
   return (
-    <>
+    <div className="vehicle-form-page">
       <Link className="text-link back-link" to={back}>
         <ArrowLeft size={16} />
         Wróć do przypomnień
@@ -243,6 +243,6 @@ export function ReminderForm({
           </fieldset>
         </form>
       </section>
-    </>
+    </div>
   );
 }

@@ -109,7 +109,7 @@ function ExpenseForm({
     );
   };
   return (
-    <>
+    <div className="vehicle-form-page">
       <Link className="text-link back-link" to={back}>
         <ArrowLeft size={16} />
         Wróć do wydatków
@@ -234,6 +234,6 @@ function ExpenseForm({
           </fieldset>
         </form>
       </section>
-    </>
+    </div>
   );
 }

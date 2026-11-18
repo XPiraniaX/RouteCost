@@ -1,9 +1,10 @@
 import { lazy, Suspense } from "react";
-import { CalendarDays, ReceiptText, Tags } from "lucide-react";
+import { CalendarDays, ReceiptText, Tags, TrendingUp } from "lucide-react";
 import { ErrorState, Loading, Stat } from "../../components/ui";
 import { number } from "../../utils/format";
 import { useExpenseStatistics } from "./api";
 import { categoryLabel } from "./types";
+import { averageMonthlyExpense } from "./monthlyAverage";
 
 const MonthlyChart = lazy(() =>
   import("../../components/charts/MonthlyChart").then((module) => ({
@@ -40,6 +41,12 @@ export function ExpenseStatistics({ id }: { id: number }) {
           value={`${number(data.totalAmount)} PLN`}
           note="Cała historia wydatków"
           icon={<CalendarDays size={19} />}
+        />
+        <Stat
+          label="Średni miesięczny koszt"
+          value={`${number(averageMonthlyExpense(data.totalAmount, data.monthlyTotals))} PLN`}
+          note="Od pierwszego wydatku do dziś"
+          icon={<TrendingUp size={19} />}
         />
       </section>
       {data.expenseCount > 0 && (

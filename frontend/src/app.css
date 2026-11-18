@@ -874,13 +874,18 @@
 .chart-data {
   color: var(--color-muted);
   font-size: 12px;
+  padding: 0 24px 20px;
 }
 .chart-data summary {
   cursor: pointer;
   margin-bottom: 12px;
+  padding: 8px 0;
 }
 
 @media (max-width: 760px) {
+  .chart-data {
+    padding: 0 20px 20px;
+  }
   .sidebar {
     visibility: hidden;
   }

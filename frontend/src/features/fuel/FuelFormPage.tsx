@@ -97,7 +97,7 @@ function FuelForm({ vehicle, entry }: { vehicle: Vehicle; entry?: FuelEntry }) {
     });
   };
   return (
-    <>
+    <div className="vehicle-form-page">
       <Link className="text-link back-link" to={back}>
         <ArrowLeft size={16} />
         Wróć do historii tankowań
@@ -225,6 +225,6 @@ function FuelForm({ vehicle, entry }: { vehicle: Vehicle; entry?: FuelEntry }) {
           </fieldset>
         </form>
       </section>
-    </>
+    </div>
   );
 }

@@ -29,6 +29,12 @@
   align-items: end;
   gap: var(--space-3);
   margin-bottom: var(--space-5);
+  padding: var(--space-5) 24px 0;
+}
+.expense-filters .form-field > span,
+.reminder-filters .form-field > span {
+  width: 100%;
+  text-align: center;
 }
 .expense-filters .form-field {
   min-width: 0;

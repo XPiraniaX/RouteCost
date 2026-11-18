@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { ErrorState, Loading } from "../../components/ui";
@@ -111,9 +111,11 @@ export function RemindersContent({ vehicle }: { vehicle: Vehicle }) {
               sortowanie według najbliższego terminu
             </p>
           </div>
-          <label className="filter-label">
-            <SlidersHorizontal size={16} />
-            <span className="sr-only">Filtruj według statusu</span>
+        </div>
+
+        <div className="reminder-filters">
+          <label className="form-field">
+            <span>Status</span>
             <select
               value={filters.status}
               onChange={(event) =>
@@ -128,9 +130,6 @@ export function RemindersContent({ vehicle }: { vehicle: Vehicle }) {
               ))}
             </select>
           </label>
-        </div>
-
-        <div className="reminder-filters">
           <label className="form-field">
             <span>Termin od</span>
             <input

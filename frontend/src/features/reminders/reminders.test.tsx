@@ -47,7 +47,7 @@ describe("RemindersContent", () => {
     mount(<RemindersContent vehicle={vehicle} />, "/reminders?vehicleId=1");
     expect(await screen.findByText("Oil service")).toBeInTheDocument();
     expect(screen.getByText(/1 wpis ·/)).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Filtruj według statusu"), { target: { value: "ACTIVE" } });
+    fireEvent.change(screen.getByLabelText("Status"), { target: { value: "ACTIVE" } });
     await waitFor(() => expect(api.get).toHaveBeenLastCalledWith("/api/vehicles/1/reminders", expect.objectContaining({ params: expect.objectContaining({ status: "ACTIVE", size: 10 }) })));
     fireEvent.click(await screen.findByRole("button", { name: "Oznacz jako wykonane: Oil service" }));
     await waitFor(() => expect(api.patch).toHaveBeenCalledWith("/api/vehicles/1/reminders/5/status", { status: "COMPLETED" }));

@@ -34,6 +34,8 @@ export const expenseApi = {
           ...(filters.dateFrom ? { dateFrom: filters.dateFrom } : {}),
           ...(filters.dateTo ? { dateTo: filters.dateTo } : {}),
         },
+        // Spring Pageable expects repeated `sort` keys, not Axios `sort[]` keys.
+        paramsSerializer: { indexes: null },
       })
     ).data,
   get: async (id: number, expenseId: number) =>

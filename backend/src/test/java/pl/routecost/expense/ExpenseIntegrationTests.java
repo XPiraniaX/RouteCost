@@ -110,6 +110,45 @@ class ExpenseIntegrationTests {
     }
 
     @Test
+    void sortsFilteredExpensesInBothDirectionsWithStableIdTieBreak() throws Exception {
+        String token = createUserToken();
+        Long vehicleId = createVehicle(ownerId(token));
+        long januaryId = Long.parseLong(createExpense(
+                token, vehicleId, "2024-01-15", "REPAIR", "100.00", null
+        ));
+        long marchFirstId = Long.parseLong(createExpense(
+                token, vehicleId, "2024-03-02", "REPAIR", "50.00", null
+        ));
+        long marchSecondId = Long.parseLong(createExpense(
+                token, vehicleId, "2024-03-02", "REPAIR", "75.00", null
+        ));
+
+        mockMvc.perform(get("/api/vehicles/{vehicleId}/expenses", vehicleId)
+                        .header("Authorization", bearer(token))
+                        .param("category", "REPAIR")
+                        .param("dateFrom", "2024-01-01")
+                        .param("dateTo", "2024-12-31")
+                        .param("sort", "expenseDate,asc")
+                        .param("sort", "id,asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(januaryId))
+                .andExpect(jsonPath("$.content[1].id").value(marchFirstId))
+                .andExpect(jsonPath("$.content[2].id").value(marchSecondId));
+
+        mockMvc.perform(get("/api/vehicles/{vehicleId}/expenses", vehicleId)
+                        .header("Authorization", bearer(token))
+                        .param("category", "REPAIR")
+                        .param("dateFrom", "2024-01-01")
+                        .param("dateTo", "2024-12-31")
+                        .param("sort", "expenseDate,desc")
+                        .param("sort", "id,desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(marchSecondId))
+                .andExpect(jsonPath("$.content[1].id").value(marchFirstId))
+                .andExpect(jsonPath("$.content[2].id").value(januaryId));
+    }
+
+    @Test
     void validatesAmountDateAndMileageChronologyWithoutCurrencyInput() throws Exception {
         String token = createUserToken();
         Long vehicleId = createVehicle(ownerId(token));
