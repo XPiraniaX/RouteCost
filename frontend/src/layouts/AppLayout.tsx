@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Brand } from "../components/Brand";
 import { useAuth } from "../features/auth/useAuth";
+import { NotificationMenu } from "../features/notifications/NotificationMenu";
 export function AppLayout() {
   const { user, signOut, authError } = useAuth();
   const [open, setOpen] = useState(false);
@@ -135,6 +136,7 @@ export function AppLayout() {
             <span>{currentView}</span>
           </div>
           <div className="user-menu">
+            <NotificationMenu />
             <span className="avatar">
               {user?.firstName.slice(0, 1)}
               {user?.lastName.slice(0, 1)}

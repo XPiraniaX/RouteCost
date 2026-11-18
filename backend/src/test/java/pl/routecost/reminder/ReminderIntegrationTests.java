@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import pl.routecost.notification.UserNotificationRepository;
+import pl.routecost.notification.UserNotification;
 import pl.routecost.user.JwtService;
 import pl.routecost.user.User;
 import pl.routecost.user.UserRepository;
@@ -24,8 +26,8 @@ import java.util.regex.Pattern;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -62,6 +64,15 @@ class ReminderIntegrationTests {
 
     @Autowired
     private ReminderNotificationPublisher notificationPublisher;
+
+    @Autowired
+    private ReminderNotificationProcessor notificationProcessor;
+
+    @Autowired
+    private ReminderNotificationConsumer notificationConsumer;
+
+    @Autowired
+    private UserNotificationRepository userNotificationRepository;
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
@@ -198,6 +209,92 @@ class ReminderIntegrationTests {
         Thread.sleep(250);
         ReminderNotification duplicateDelivery = notificationRepository.findById(upcoming.getId()).orElseThrow();
         assertEquals(ReminderNotificationStatus.PROCESSED, duplicateDelivery.getStatus());
+        assertEquals(1, userNotificationRepository.countBySource_Id(upcoming.getId()));
+    }
+
+    @Test
+    void createsOwnedNotificationsSupportsReadStateAndRejectsOtherUsers() throws Exception {
+        String ownerToken = createUserToken();
+        Long vehicleId = createVehicle(ownerId(ownerToken));
+        String reminderId = createReminder(ownerToken, vehicleId, LocalDate.now().plusDays(1), "SERVICE", null);
+        notificationService.scanDueReminders();
+        ReminderNotification technical = notificationRepository.findAllByReminder_IdOrderByCreatedAtAsc(Long.valueOf(reminderId)).getFirst();
+        notificationPublisher.publishPending();
+        awaitProcessed(List.of(technical.getId()));
+        UserNotification userNotification = userNotificationRepository.findAll().stream()
+                .filter(item -> item.getSource().getId().equals(technical.getId())).findFirst().orElseThrow();
+
+        mockMvc.perform(get("/api/notifications/unread-count").header("Authorization", bearer(ownerToken)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1));
+        mockMvc.perform(get("/api/notifications").header("Authorization", bearer(ownerToken)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].title").value("Reminder"))
+                .andExpect(jsonPath("$.content[0].vehicleId").value(vehicleId))
+                .andExpect(jsonPath("$.content[0].read").value(false));
+
+        String otherToken = createUserToken();
+        mockMvc.perform(get("/api/notifications").header("Authorization", bearer(otherToken)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.content.length()").value(0));
+        mockMvc.perform(patch("/api/notifications/{id}/read", userNotification.getId())
+                        .header("Authorization", bearer(otherToken)))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(patch("/api/notifications/{id}/read", userNotification.getId())
+                        .header("Authorization", bearer(ownerToken)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.read").value(true));
+        mockMvc.perform(get("/api/notifications/unread-count").header("Authorization", bearer(ownerToken)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(0));
+
+        String nextReminderId = createReminder(ownerToken, vehicleId, LocalDate.now().plusDays(2), "INSURANCE", null);
+        notificationService.scanDueReminders();
+        ReminderNotification next = notificationRepository.findAllByReminder_IdOrderByCreatedAtAsc(Long.valueOf(nextReminderId)).getFirst();
+        notificationPublisher.publishPending();
+        awaitProcessed(List.of(next.getId()));
+        mockMvc.perform(patch("/api/notifications/read-all").header("Authorization", bearer(ownerToken)))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/notifications/unread-count").header("Authorization", bearer(ownerToken)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(0));
+    }
+
+    @Test
+    void discardsStaleReminderWithoutCreatingUserNotification() throws Exception {
+        String token = createUserToken();
+        Long vehicleId = createVehicle(ownerId(token));
+        String reminderId = createReminder(token, vehicleId, LocalDate.now().plusDays(1), "SERVICE", null);
+        notificationService.scanDueReminders();
+        ReminderNotification technical = notificationRepository.findAllByReminder_IdOrderByCreatedAtAsc(Long.valueOf(reminderId)).getFirst();
+        technical.markPublished(java.time.OffsetDateTime.now());
+        notificationRepository.saveAndFlush(technical);
+        Reminder staleReminder = reminderRepository.findById(Long.valueOf(reminderId)).orElseThrow();
+        staleReminder.changeStatus(ReminderStatus.CANCELLED);
+        reminderRepository.saveAndFlush(staleReminder);
+        notificationProcessor.process(new ReminderNotificationEvent(technical.getId()));
+
+        assertEquals(ReminderNotificationStatus.DISCARDED,
+                notificationRepository.findById(technical.getId()).orElseThrow().getStatus());
+        assertEquals(0, userNotificationRepository.countBySource_Id(technical.getId()));
+    }
+
+    @Test
+    void retriesInvalidMessageThenRoutesItToDeadLetterQueue() {
+        rabbitTemplate.convertAndSend("", ReminderConfiguration.NOTIFICATION_QUEUE, "not-a-notification-id");
+        Object deadLetter = rabbitTemplate.receiveAndConvert(ReminderConfiguration.NOTIFICATION_DEAD_LETTER_QUEUE, 10_000);
+        org.junit.jupiter.api.Assertions.assertEquals("not-a-notification-id", deadLetter);
+    }
+
+    @Test
+    void migratesPendingMessagesFromThePreviouslyDeclaredQueue() throws Exception {
+        String token = createUserToken();
+        Long vehicleId = createVehicle(ownerId(token));
+        String reminderId = createReminder(token, vehicleId, LocalDate.now().plusDays(1), "SERVICE", null);
+        notificationService.scanDueReminders();
+        ReminderNotification technical = notificationRepository.findAllByReminder_IdOrderByCreatedAtAsc(Long.valueOf(reminderId)).getFirst();
+        technical.markPublished(java.time.OffsetDateTime.now());
+        notificationRepository.saveAndFlush(technical);
+
+        notificationConsumer.migrateLegacy(new ReminderNotificationEvent(technical.getId()).toQueuePayload());
+        awaitProcessed(List.of(technical.getId()));
+        assertEquals(1, userNotificationRepository.countBySource_Id(technical.getId()));
     }
 
     @Test

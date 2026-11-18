@@ -15,6 +15,7 @@ import { ExpensePage } from "./features/expenses/ExpensesPage";
 import { ExpenseFormPage } from "./features/expenses/ExpenseFormPage";
 import { RemindersPage } from "./features/reminders/RemindersPage";
 import { ReminderFormPage } from "./features/reminders/ReminderFormPage";
+import { ReminderDetailPage } from "./features/reminders/ReminderDetailPage";
 import { AdminPage } from "./features/admin/AdminPage";
 import { AdminRoute } from "./routes/AdminRoute";
 
@@ -34,6 +35,7 @@ export function App() {
           <Route path="/fuel" element={<FuelPage />} />
           <Route path="/expenses" element={<ExpensePage />} />
           <Route path="/reminders" element={<RemindersPage />} />
+          <Route path="/reminders/:vehicleId/:reminderId" element={<ReminderDetailPage />} />
           <Route element={<AdminRoute />}>
             <Route path="/admin" element={<AdminPage />} />
           </Route>

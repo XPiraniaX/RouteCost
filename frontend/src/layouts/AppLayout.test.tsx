@@ -5,6 +5,7 @@ import { useAuth } from "../features/auth/useAuth";
 import { AppLayout } from "./AppLayout";
 
 vi.mock("../features/auth/useAuth", () => ({ useAuth: vi.fn() }));
+vi.mock("../features/notifications/NotificationMenu", () => ({ NotificationMenu: () => <button aria-label="Powiadomienia">Powiadomienia</button> }));
 const mockUseAuth = vi.mocked(useAuth);
 const signOut = vi.fn();
 

@@ -21,9 +21,11 @@ import pl.routecost.reminder.exception.InvalidReminderStatusTransitionException;
 import pl.routecost.reminder.exception.ReminderChronologyException;
 import pl.routecost.reminder.exception.ReminderDateRangeException;
 import pl.routecost.reminder.exception.ReminderNotFoundException;
+import pl.routecost.notification.NotificationNotFoundException;
 
 import java.util.Map;
 import java.util.TreeMap;
+import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -116,6 +118,11 @@ public class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Reminder was not found.");
     }
 
+    @ExceptionHandler(NotificationNotFoundException.class)
+    ProblemDetail handleNotificationNotFound(NotificationNotFoundException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Notification was not found.");
+    }
+
     @ExceptionHandler(ReminderDateRangeException.class)
     ProblemDetail handleReminderDateRange(ReminderDateRangeException exception) {
         return ProblemDetail.forStatusAndDetail(
@@ -154,5 +161,10 @@ public class ApiExceptionHandler {
         );
         problem.setProperty("errors", errors);
         return problem;
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    ProblemDetail handleConstraintViolation(ConstraintViolationException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "One or more request parameters are invalid.");
     }
 }
