@@ -18,6 +18,12 @@
   grid-template-columns: minmax(220px, 2fr) repeat(2, minmax(150px, 1fr));
   gap: 0.85rem;
   margin-bottom: 1rem;
+  padding: 1.25rem 24px 0;
+}
+
+.admin-filters .form-field > span {
+  width: 100%;
+  text-align: center;
 }
 
 .admin-user-email {
@@ -88,6 +94,7 @@
 @media (max-width: 760px) {
   .admin-filters {
     grid-template-columns: 1fr;
+    padding-inline: 20px;
   }
 
   .admin-pagination {
