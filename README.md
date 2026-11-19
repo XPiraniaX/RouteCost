@@ -8,6 +8,7 @@ Aplikacja webowa do zarządzania pojazdami, rejestrowania kosztów ich eksploata
 - [Funkcjonalności](#funkcjonalności)
 - [Technologie](#technologie)
 - [Architektura](#architektura)
+- [Migracje Flyway](#migracje-flyway)
 - [Struktura projektu](#struktura-projektu)
 - [Model danych](#model-danych)
 - [Diagram ERD](#diagram-erd)
@@ -16,9 +17,11 @@ Aplikacja webowa do zarządzania pojazdami, rejestrowania kosztów ich eksploata
 - [Asynchroniczne przypomnienia](#asynchroniczne-przypomnienia)
 - [REST API i Swagger](#rest-api-i-swagger)
 - [Wymagania środowiskowe](#wymagania-środowiskowe)
+- [Lokalne uruchomienie bez Dockera](#lokalne-uruchomienie-bez-dockera)
 - [Uruchomienie przez Docker Compose](#uruchomienie-przez-docker-compose)
 - [Zmienne środowiskowe](#zmienne-środowiskowe)
 - [Testy](#testy)
+- [Znane ograniczenia](#znane-ograniczenia)
 - [Dane demonstracyjne](#dane-demonstracyjne)
 
 ## O projekcie
@@ -63,6 +66,12 @@ flowchart LR
 ```
 
 W Compose backend, frontend, PostgreSQL i RabbitMQ działają jako osobne usługi. Backend uruchamia się po uzyskaniu statusu healthy przez PostgreSQL i RabbitMQ. Baza korzysta z nazwanego wolumenu Compose.
+
+## Migracje Flyway
+
+Flyway zarządza schematem PostgreSQL. Pliki migracji SQL znajdują się w `backend/src/main/resources/db/migration/` i są wersjonowane kolejno od V1 do V8. Przy starcie backendu Spring Boot uruchamia Flyway automatycznie (`spring.flyway.enabled=true`), zanim aplikacja zacznie korzystać ze schematu; Hibernate sprawdza zgodność mapowania przez `spring.jpa.hibernate.ddl-auto=validate`.
+
+Na nowej, pustej bazie Flyway tworzy schemat, wykonując dostępne migracje w kolejności. W typowym uruchomieniu nie trzeba ręcznie wywoływać migracji. Zastosowanych plików migracji nie należy edytować; kolejne zmiany schematu powinny być wprowadzane jako nowa migracja.
 
 ## Struktura projektu
 
@@ -144,6 +153,8 @@ Kolejka główna: `routecost.reminder.notifications.v2`; DLQ: `routecost.reminde
 
 Po uruchomieniu backendu dokumentacja dostępna jest pod adresem [Swagger UI](http://localhost:8081/swagger-ui.html); OpenAPI JSON: [http://localhost:8081/v3/api-docs](http://localhost:8081/v3/api-docs). Dla chronionych endpointów należy przekazać access token w nagłówku Bearer. Rejestracja, logowanie, odświeżenie i wylogowanie są ścieżkami uwierzytelniania; pozostałe endpointy wymagają uwierzytelnienia, a `/api/admin/**` dodatkowo roli ADMIN.
 
+Poniższa tabela jest skróconym zestawieniem najważniejszych tras, a nie pełnym opisem kontraktu. Pełne parametry, modele żądań i odpowiedzi oraz możliwość wywoływania endpointów z poziomu Swagger UI są dostępne w interaktywnej dokumentacji i OpenAPI JSON. Chronione operacje autoryzuje się access tokenem jako `Bearer`; endpointy administracyjne wymagają roli `ADMIN`. Rejestracja, logowanie, odświeżenie i wylogowanie są publicznymi trasami auth, przy czym odświeżenie i wylogowanie dodatkowo korzystają z refresh cookie oraz nagłówka `X-RouteCost-Auth: 1`.
+
 | Obszar | Główne endpointy |
 |---|---|
 | Uwierzytelnianie | `POST /api/auth/register`, `/login`, `/refresh`, `/logout`; `GET /api/auth/me` |
@@ -167,6 +178,24 @@ Przykład wywołania wymagającego tokenu:
 curl -H "Authorization: Bearer <access-token>" \
   "http://localhost:8081/api/vehicles"
 ```
+
+### Przykładowa odpowiedź błędu
+
+Niepoprawne pole w żądaniu obsłużonym przez Bean Validation zwraca HTTP `400 Bad Request`. `ApiExceptionHandler` ustawia tytuł i opis problemu oraz mapę `errors` z nazwami pól i komunikatami walidacji. Przykładowy kształt odpowiedzi:
+
+```json
+{
+  "type": "about:blank",
+  "title": "Validation failed",
+  "status": 400,
+  "detail": "One or more request fields are invalid.",
+  "errors": {
+    "email": "must be a well-formed email address"
+  }
+}
+```
+
+Wartości w `errors` zależą od pola i naruszonego ograniczenia. Dla błędów domenowych handler zwraca odpowiedni kod HTTP oraz opis w `detail`, np. `404` dla nieznanego zasobu, `409` dla konfliktu stanu lub `400` dla błędu chronologii.
 
 ## Wymagania środowiskowe
 
@@ -259,6 +288,13 @@ npm run build
 ```
 
 Testy obejmują m.in. routing, formularze i walidację, klient API, widoki funkcjonalne oraz narzędzia pomocnicze.
+
+## Znane ograniczenia
+
+- Testy integracyjne backendu nie korzystają z Testcontainers. Wymagają dostępnego PostgreSQL i RabbitMQ skonfigurowanych dla procesu testowego; do ich uruchamiania należy przygotować odizolowane usługi testowe.
+- PostgreSQL i RabbitMQ nie uczestniczą w jednej transakcji rozproszonej. Rekord outboxa, publisher confirms, ponawianie publikacji i idempotentny konsument ograniczają skutki awarii oraz duplikatów, ale nie zapewniają atomowego zatwierdzenia zmian w obu usługach.
+- Powiadomienia o przypomnieniach są zapisywane i udostępniane w aplikacji przez REST API. W repozytorium nie ma integracji wysyłającej e-mail ani powiadomienia push.
+- Repozytorium zawiera lokalny Docker Compose, a nie potwierdzone wdrożenie produkcyjne. Nie ma tu wyników wdrożenia ani jego monitoringu; uruchomienie Compose nie stanowi weryfikacji środowiska produkcyjnego.
 
 ## Dane demonstracyjne
 
