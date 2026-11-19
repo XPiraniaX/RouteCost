@@ -1,162 +1,266 @@
-# RouteCost
+﻿# RouteCost
 
-**RouteCost** to aplikacja webowa służąca do zarządzania kosztami eksploatacji pojazdów. Umożliwia rejestrowanie tankowań, wydatków, serwisów i przypomnień, a także analizowanie kosztów utrzymania samochodu.
+Aplikacja webowa do zarządzania pojazdami, rejestrowania kosztów ich eksploatacji i pilnowania terminów obsługi. Frontend React komunikuje się z backendem Spring Boot przez REST API; PostgreSQL przechowuje dane, a RabbitMQ obsługuje asynchroniczne powiadomienia.
 
-## Technologie
+## Spis treści
 
-### Backend
-- Java 21
-- Spring Boot
-- Spring Security
-- JWT – uwierzytelnianie i autoryzacja
-- Spring Data JPA / Hibernate
-- PostgreSQL
-- Flyway – migracje bazy danych
-- RabbitMQ – obsługa zadań asynchronicznych
-- Maven
+- [O projekcie](#o-projekcie)
+- [Funkcjonalności](#funkcjonalności)
+- [Technologie](#technologie)
+- [Architektura](#architektura)
+- [Struktura projektu](#struktura-projektu)
+- [Model danych](#model-danych)
+- [Diagram ERD](#diagram-erd)
+- [Uwierzytelnianie i bezpieczeństwo](#uwierzytelnianie-i-bezpieczeństwo)
+- [Reguły biznesowe](#reguły-biznesowe)
+- [Asynchroniczne przypomnienia](#asynchroniczne-przypomnienia)
+- [REST API i Swagger](#rest-api-i-swagger)
+- [Wymagania środowiskowe](#wymagania-środowiskowe)
+- [Uruchomienie przez Docker Compose](#uruchomienie-przez-docker-compose)
+- [Zmienne środowiskowe](#zmienne-środowiskowe)
+- [Testy](#testy)
+- [Dane demonstracyjne](#dane-demonstracyjne)
 
-### Frontend
-- React
-- TypeScript
-- Vite
-- React Router
-- Axios
-- TanStack Query
-- React Hook Form
-- Zod
-- Tailwind CSS
-- Recharts
+## O projekcie
 
-### Infrastruktura
-- Docker
-- Docker Compose
-- PostgreSQL
-- RabbitMQ
+RouteCost porządkuje informacje o eksploatacji pojazdu, które często są rozproszone między notatkami i rachunkami. Użytkownik prowadzi historię tankowań, wydatków i terminów obsługi, a następnie analizuje statystyki i koszty utrzymania.
 
 ## Funkcjonalności
 
-- Rejestracja i logowanie użytkowników.
-- Uwierzytelnianie za pomocą JWT oraz odświeżanie sesji.
-- Zarządzanie pojazdami.
-- Rejestrowanie tankowań i obliczanie zużycia paliwa.
-- Rejestrowanie wydatków związanych z pojazdami.
-- Analiza kosztów eksploatacji.
-- Przypomnienia dotyczące obsługi i terminów związanych z pojazdem.
-- Obsługa zadań asynchronicznych z wykorzystaniem RabbitMQ.
-- System uprawnień oparty na rolach USER i ADMIN.
+- Rejestracja, logowanie, odtwarzanie sesji i wylogowanie.
+- Obsługa kont USER i ADMIN oraz administracja kontami.
+- Zarządzanie pojazdami i ich szczegółami.
+- Historia tankowań, statystyki paliwa i spalanie liczone między pełnymi tankowaniami.
+- Historia wydatków z filtrowaniem według kategorii i dat oraz statystykami.
+- Przypomnienia serwisowe, zmiana statusu, filtrowanie i ponowna aktywacja.
+- Dashboard, wykresy i raport kosztów dla pojazdu.
+- Powiadomienia w aplikacji o nadchodzących i zaległych terminach.
 
-## Konfiguracja
+## Technologie
 
-1. Sklonuj repozytorium:
-
-```bash
-git clone <URL_REPOZYTORIUM>
-cd RouteCost
-```
-
-2. Utwórz lokalny plik konfiguracyjny na podstawie przykładowego:
-
-**Windows PowerShell:**
-```powershell
-Copy-Item .env.example .env
-```
-
-3. Otwórz plik `.env` i sprawdź konfigurację środowiska.
-
-Opcjonalnie można skonfigurować początkowe konto administratora za pomocą kompletu zmiennych:
-
-- `INITIAL_ADMIN_EMAIL`
-- `INITIAL_ADMIN_PASSWORD`
-- `INITIAL_ADMIN_FIRST_NAME`
-- `INITIAL_ADMIN_LAST_NAME`
-
-Jeśli zmienne nie zostaną ustawione, aplikacja nie utworzy początkowego konta administratora.
-
-## Uruchomienie aplikacji
-
-W katalogu głównym projektu wykonaj:
-
-```bash
-docker compose up --build -d
-```
-
-Docker Compose uruchomi wymagane usługi:
-
-- frontend,
-- backend,
-- PostgreSQL,
-- RabbitMQ.
-
-### Sprawdzenie stanu kontenerów
-
-```bash
-docker compose ps
-```
-
-### Wyświetlanie logów
-
-Wszystkie usługi:
-
-```bash
-docker compose logs -f
-```
-
-Backend:
-
-```bash
-docker compose logs -f backend
-```
-
-Frontend:
-
-```bash
-docker compose logs -f frontend
-```
-
-## Dostęp do aplikacji
-
-Po prawidłowym uruchomieniu aplikacja powinna być dostępna pod adresami:
-
-| Usługa | Adres |
+| Obszar | Technologie |
 |---|---|
-| Frontend | http://localhost:5174 |
-| Backend API | http://localhost:8081 |
-| RabbitMQ Management | http://localhost:15672 |
+| Backend | Java 21, Spring Boot 4.0.9, Spring MVC, Spring Security, Spring Data JPA/Hibernate, Bean Validation, Maven |
+| API | REST, Springdoc OpenAPI 3.0.1 |
+| Baza i migracje | PostgreSQL 17, Flyway |
+| Komunikacja asynchroniczna | RabbitMQ 4, Spring AMQP |
+| Frontend | React 19, TypeScript, Vite, React Router, Axios, TanStack Query, React Hook Form, Zod, Recharts, Lucide React |
+| Testy | JUnit, Spring Boot Test, Vitest, Testing Library |
+| Uruchamianie | Docker, Docker Compose |
 
-Porty PostgreSQL i RabbitMQ mogą być dostępne lokalnie zgodnie z konfiguracją `docker-compose.yml`.
+## Architektura
 
-## Zatrzymanie aplikacji
+Frontend jest aplikacją SPA i wywołuje endpointy REST backendu. Backend dzieli kod na moduły domenowe; typowy przepływ żądania przechodzi przez kontroler, serwis i repozytorium JPA do PostgreSQL. Flyway utrzymuje schemat bazy migracjami V1–V8. Scheduler i komponenty Spring AMQP realizują osobny przepływ zdarzeń przypomnień.
 
-Aby zatrzymać kontenery:
-
-```bash
-docker compose down
+```mermaid
+flowchart LR
+    B[Przeglądarka] -->|pobiera aplikację| F[Frontend React<br/>renderowanie UI]
+    F <-->|REST API<br/>HTTP/JSON| API[Backend Spring Boot<br/>kontrolery → serwisy → repozytoria]
+    API <-->|JPA| DB[(PostgreSQL 17<br/>Flyway V1–V8)]
+    API -->|publikacja zdarzeń| MQ[(RabbitMQ 4)]
+    MQ -->|zdarzenia do konsumenta| API
+    API -->|zapis przetworzonych powiadomień| DB
 ```
 
-Aby zatrzymać kontenery i usunąć również dane zapisane w wolumenach:
-
-```bash
-docker compose down -v
-```
-
-**Uwaga:** polecenie `docker compose down -v` usuwa dane bazy danych zapisane w wolumenach. Używaj go tylko wtedy, gdy chcesz wyczyścić środowisko.
+W Compose backend, frontend, PostgreSQL i RabbitMQ działają jako osobne usługi. Backend uruchamia się po uzyskaniu statusu healthy przez PostgreSQL i RabbitMQ. Baza korzysta z nazwanego wolumenu Compose.
 
 ## Struktura projektu
 
 ```text
 RouteCost/
-├── backend/          # Aplikacja Spring Boot
-├── frontend/         # Aplikacja React + TypeScript
+├── backend/
+│   └── src/
+│       ├── main/java/pl/routecost/       # moduły domenowe backendu
+│       ├── main/resources/db/migration/  # migracje Flyway V1–V8
+│       └── test/java/pl/routecost/       # testy backendowe
+├── frontend/
+│   └── src/
+│       ├── api/                          # klient HTTP i obsługa błędów
+│       ├── features/                     # moduły widoków i funkcji
+│       ├── routes/                       # routing i zabezpieczone trasy
+│       └── components/                   # współdzielone komponenty
+├── docs/erd/routecost.dbml               # źródło diagramu ERD
 ├── docker-compose.yml
-├── .env.example
 └── README.md
 ```
 
-## Baza danych
+Moduły backendu obejmują m.in. `admin`, `dashboard`, `expense`, `fuel`, `notification`, `reminder`, `user` i `vehicle`. Frontend grupuje widoki według tych samych obszarów funkcjonalnych.
 
-Projekt wykorzystuje PostgreSQL. Schemat bazy danych jest zarządzany przez Flyway, który automatycznie wykonuje dostępne migracje podczas uruchamiania aplikacji.
+## Model danych
 
-## Konta demonstracyjne
+Schemat końcowy definiowany przez migracje Flyway V1–V8 zawiera osiem tabel:
+
+| Encja | Rola w modelu |
+|---|---|
+| `users` | Konto, rola i stan aktywności użytkownika. |
+| `vehicles` | Pojazd należący do użytkownika. |
+| `fuel_entries` | Tankowania i dane do obliczeń paliwa. |
+| `expenses` | Wydatki związane z pojazdem, w PLN. |
+| `reminders` | Terminy i statusy przypomnień dla pojazdu. |
+| `reminder_notifications` | Trwałe zdarzenia/outbox powiadomień. |
+| `refresh_tokens` | Skróty tokenów odświeżających i ich rodziny. |
+| `user_notifications` | Powiadomienia użytkownika wraz ze stanem odczytu. |
+
+Użytkownik może mieć wiele pojazdów i tokenów odświeżających. Pojazd grupuje tankowania, wydatki i przypomnienia. Przypomnienie może wygenerować zdarzenie outbox, a powiadomienie użytkownika wskazuje źródłowe zdarzenie.
+## Diagram ERD
+
+Diagram jest zgodny ze schematem po migracjach Flyway V1–V8. Jego źródło DBML znajduje się w [docs/erd/routecost.dbml](docs/erd/routecost.dbml).
+
+![Diagram ERD RouteCost](docs/erd/routecost-erd.svg)
+
+## Uwierzytelnianie i bezpieczeństwo
+
+- Hasła są przechowywane jako skróty BCrypt.
+- Access token JWT jest ważny 15 minut i przesyłany w `Authorization: Bearer <token>`.
+- Refresh token jest losowy; baza przechowuje jego SHA-256. Token przesyłany jest w cookie `HttpOnly`, którego odświeżenie rotuje token. Wykrycie ponownego użycia unieważnionego tokenu unieważnia jego aktywną rodzinę.
+- Frontend przechowuje access token w pamięci i współdzieli odświeżenie sesji dla równoczesnych odpowiedzi 401.
+- Publiczna rejestracja nadaje rolę USER. Endpointy `/api/admin/**` wymagają roli ADMIN.
+- Dostęp do pojazdów i powiązanych danych jest ograniczony do właściciela; rola ADMIN nie omija tej kontroli.
+- Rola i status konta są sprawdzane z bazą podczas uwierzytelniania żądań. Dezaktywacja konta blokuje dostęp i unieważnia aktywne tokeny odświeżające.
+- Odświeżenie i wylogowanie wymagają cookie z `/api/auth` oraz nagłówka `X-RouteCost-Auth: 1`. CORS z credentials jest ograniczony do skonfigurowanego originu.
+
+## Reguły biznesowe
+
+- Tankowania nie mogą poprzedzać zakupu pojazdu ani naruszać chronologii przebiegu.
+- Spalanie wyliczane jest dla odcinków między kolejnymi pełnymi tankowaniami; paliwo z tankowań pośrednich sumuje się do następnego pełnego tankowania.
+- Koszt tankowania i kwota wydatku muszą być dodatnie. Wydatki są zapisywane w PLN.
+- Przebieg podany przy tankowaniu lub wydatku podlega kontroli chronologii pojazdu.
+- Data przypomnienia nie może poprzedzać daty zakupu pojazdu. Reaktywacja zakończonego lub anulowanego przypomnienia zwiększa jego wersję aktywacji.
+- Operacje na pojazdach i zasobach zależnych sprawdzają właściciela.
+- Administrator nie może zdezaktywować ani zdegradować własnego konta ani odebrać uprawnień ostatniemu aktywnemu administratorowi.
+
+## Asynchroniczne przypomnienia
+
+1. Scheduler skanuje aktywne przypomnienia domyślnie co 60 sekund, uwzględniając terminy z najbliższych 7 dni i terminy zaległe.
+2. Serwis zapisuje zdarzenia ze statusem `PENDING` w tabeli `reminder_notifications`. Ograniczenie unikalności generacji zapobiega tworzeniu tego samego zdarzenia ponownie.
+3. Publisher wysyła identyfikator zdarzenia do RabbitMQ i po publisher confirm oznacza rekord jako `PUBLISHED`.
+4. Konsument sprawdza, czy przypomnienie jest nadal aktywne i czy wersja aktywacji się zgadza. W transakcji tworzy `user_notifications` i oznacza zdarzenie jako `PROCESSED`; nieaktualne zdarzenie otrzymuje status `DISCARDED`.
+5. Ponowne dostarczenie zdarzenia jest obsługiwane idempotentnie; unikalność `user_notifications.reminder_notification_id` zabezpiecza przed duplikatem.
+6. Listener wykonuje do trzech prób z przerwami 250 ms i 500 ms. Po ich wyczerpaniu wiadomość trafia do dead-letter queue (DLQ).
+
+Kolejka główna: `routecost.reminder.notifications.v2`; DLQ: `routecost.reminder.notifications.v2.dlq`. Zachowana jest starsza kolejka `routecost.reminder.notifications` do obsługi pozostałych wiadomości. Zapis w bazie i publikacja do RabbitMQ nie są jedną transakcją rozproszoną; ponowne dostarczenia zabezpiecza idempotentne przetwarzanie. Użytkownik przegląda swoje powiadomienia w aplikacji, sprawdza licznik nieprzeczytanych i oznacza je jako przeczytane.
+
+## REST API i Swagger
+
+Po uruchomieniu backendu dokumentacja dostępna jest pod adresem [Swagger UI](http://localhost:8081/swagger-ui.html); OpenAPI JSON: [http://localhost:8081/v3/api-docs](http://localhost:8081/v3/api-docs). Dla chronionych endpointów należy przekazać access token w nagłówku Bearer. Rejestracja, logowanie, odświeżenie i wylogowanie są ścieżkami uwierzytelniania; pozostałe endpointy wymagają uwierzytelnienia, a `/api/admin/**` dodatkowo roli ADMIN.
+
+| Obszar | Główne endpointy |
+|---|---|
+| Uwierzytelnianie | `POST /api/auth/register`, `/login`, `/refresh`, `/logout`; `GET /api/auth/me` |
+| Pojazdy | `GET/POST /api/vehicles`; `GET/PUT/DELETE /api/vehicles/{vehicleId}` |
+| Tankowania | `GET/POST /api/vehicles/{vehicleId}/fuel-entries`; `GET/PUT/DELETE /api/vehicles/{vehicleId}/fuel-entries/{entryId}`; `GET /api/vehicles/{vehicleId}/fuel-statistics` |
+| Wydatki | `GET/POST /api/vehicles/{vehicleId}/expenses`; `GET/PUT/DELETE /api/vehicles/{vehicleId}/expenses/{expenseId}`; `GET /api/vehicles/{vehicleId}/expense-statistics` |
+| Przypomnienia | `GET/POST /api/vehicles/{vehicleId}/reminders`; `GET/PUT/DELETE /api/vehicles/{vehicleId}/reminders/{reminderId}`; `PATCH .../{reminderId}/status`; `POST .../{reminderId}/reactivate` |
+| Dashboard | `GET /api/dashboard/summary`; `GET /api/vehicles/{vehicleId}/cost-summary` |
+| Administracja | `GET /api/admin/users`, `/api/admin/dashboard`; `PATCH /api/admin/users/{userId}/role`, `/status` |
+| Powiadomienia | `GET /api/notifications`, `/unread-count`; `PATCH /api/notifications/{notificationId}/read`, `/read-all` |
+
+Przykład sprawdzenia endpointu publicznej dokumentacji:
+
+```bash
+curl http://localhost:8081/v3/api-docs
+```
+
+Przykład wywołania wymagającego tokenu:
+
+```bash
+curl -H "Authorization: Bearer <access-token>" \
+  "http://localhost:8081/api/vehicles"
+```
+
+## Wymagania środowiskowe
+
+Do uruchomienia w kontenerach wymagane są Docker Engine/Desktop z Docker Compose oraz wolne porty `5432`, `5672`, `15672`, `8081` i `5174` (lub porty ustawione w `.env`). Aplikacja nie wymaga lokalnej instalacji Javy ani Node.js przy uruchomieniu Compose. Przy pracy bez kontenerów potrzebne są dodatkowo JDK 21, Node.js/npm, PostgreSQL 17 i RabbitMQ 4.
+
+## Uruchomienie przez Docker Compose
+
+W katalogu głównym repozytorium utwórz lokalny plik `.env` na podstawie przykładu, a następnie uzupełnij wymagane sekrety:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Wymagane do startu Compose są `DB_PASSWORD`, `RABBITMQ_PASSWORD` i `JWT_SECRET_BASE64`. Ustaw własne wartości zamiast przykładowych lokalnych haseł. Sekret JWT powinien być losowym kluczem zakodowanym Base64 o wystarczającej długości (co najmniej 256 bitów). Nie publikuj ani nie commituj `.env`.
+
+Uruchom budowę obrazów i kontenery:
+
+```powershell
+docker compose up --build -d
+docker compose ps
+```
+
+Adresy usług:
+
+| Usługa | Adres |
+|---|---|
+| Frontend | http://localhost:5174 |
+| Backend | http://localhost:8081 |
+| Swagger UI | http://localhost:8081/swagger-ui.html |
+| OpenAPI JSON | http://localhost:8081/v3/api-docs |
+| RabbitMQ Management | http://localhost:15672 |
+| PostgreSQL | `localhost:5432` |
+| RabbitMQ AMQP | `localhost:5672` |
+
+Porty frontend/backend można zmienić przez `FRONTEND_PORT` i `BACKEND_PORT`. Interfejs RabbitMQ Management używa danych ustawionych w `RABBITMQ_USERNAME` i `RABBITMQ_PASSWORD`.
+
+Logi wszystkich usług lub wybranej usługi:
+
+```powershell
+docker compose logs -f
+docker compose logs -f backend
+```
+
+Zatrzymanie kontenerów bez usuwania danych:
+
+```powershell
+docker compose down
+```
+
+`docker compose down -v` usuwa również wolumen `routecost_postgres_data` i zapisane w nim dane PostgreSQL. Używaj tego polecenia wyłącznie wtedy, gdy świadomie chcesz wyczyścić lokalną bazę.
+
+## Zmienne środowiskowe
+
+Pełna lista wartości opcjonalnych znajduje się w `.env.example`; Compose udostępnia następujące ustawienia:
+
+| Zmienna | Znaczenie |
+|---|---|
+| `DB_USERNAME`, `DB_PASSWORD` | Konto PostgreSQL; hasło jest wymagane. |
+| `RABBITMQ_USERNAME`, `RABBITMQ_PASSWORD` | Konto brokera; hasło jest wymagane. |
+| `JWT_SECRET_BASE64` | Sekret podpisujący JWT zakodowany w Base64; wymagany. |
+| `REFRESH_TOKEN_EXPIRATION` | Czas życia refresh tokenu, domyślnie `P7D`. |
+| `REFRESH_COOKIE_NAME`, `REFRESH_COOKIE_SECURE`, `REFRESH_COOKIE_SAME_SITE` | Nazwa i atrybuty cookie odświeżającego. `SameSite=None` wymaga `Secure=true`. |
+| `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD`, `INITIAL_ADMIN_FIRST_NAME`, `INITIAL_ADMIN_LAST_NAME` | Komplet danych początkowego administratora; opcjonalne wartości konfiguracyjne. |
+| `BACKEND_PORT`, `FRONTEND_PORT` | Porty publikowane na hoście; domyślnie `8081` i `5174`. |
+| `SPRING_PROFILES_ACTIVE` | Profil Springa; Compose domyślnie ustawia `dev`. |
+
+Wewnątrz Compose backend łączy się z usługami pod nazwami `postgres` i `rabbitmq`. Przy uruchomieniu backendu poza Compose można skonfigurować m.in. `DATABASE_URL`, `RABBITMQ_HOST` i `RABBITMQ_PORT`. Dla lokalnego HTTP ustawienie cookie domyślnie ma `Secure=false`; konfiguracja wdrożenia HTTPS powinna używać `Secure=true`.
+
+## Testy
+
+Testy istnieją w repozytorium, ale w ramach przygotowania tej dokumentacji ich nie uruchamiano; poniższe polecenia opisują sposób uruchomienia, nie wynik.
+
+Backendowe testy JUnit i Spring Boot Test znajdują się w `backend/src/test/java`. Obejmują m.in. obliczenia spalania, statusy przypomnień, uwierzytelnianie, reguły domenowe i integracyjne testy API. Uruchomienie z katalogu głównego w PowerShell:
+
+```powershell
+Push-Location backend
+.\mvnw.cmd test
+Pop-Location
+```
+
+Testy integracyjne korzystają z usług środowiskowych PostgreSQL i RabbitMQ skonfigurowanych dla backendu. Projekt nie konfiguruje Testcontainers, dlatego przygotuj odizolowane instancje testowe; nie kieruj testów do bazy ani brokera ze współdzielonymi danymi aplikacji.
+
+Testy frontendu używają Vitest, jsdom i Testing Library. Pliki testowe `*.test.*` są umieszczone przy kodzie w `frontend/src`. W katalogu `frontend`:
+
+```powershell
+npm ci
+npm test
+npm run lint
+npm run build
+```
+
+Testy obejmują m.in. routing, formularze i walidację, klient API, widoki funkcjonalne oraz narzędzia pomocnicze.
+
+## Dane demonstracyjne
 
 Lokalne środowisko developerskie tworzy trzy przykładowe konta użytkowników. Każde ma rolę `USER`, jest aktywne i używa hasła zahashowanego istniejącym mechanizmem BCrypt.
 
@@ -181,4 +285,4 @@ $env:SPRING_PROFILES_ACTIVE = "prod"
 docker compose up --build -d
 ```
 
-Przed kolejnym uruchomieniem developerskim przywróć profil `dev` albo usuń zmienną `SPRING_PROFILES_ACTIVE` z bieżącej sesji PowerShell. Samo zatrzymanie kontenerów nie usuwa bazy ani kont demonstracyjnych. Nie wykorzystuj tych danych logowania w publicznie dostępnym wdrożeniu.
+Przed kolejnym uruchomieniem developerskim przywróć profil `dev` albo usuń zmienną `SPRING_PROFILES_ACTIVE` z bieżącej sesji PowerShell. Samo zatrzymanie kontenerów nie usuwa bazy ani kont demonstracyjnych.
