@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.routecost.user.JwtService;
 import pl.routecost.user.User;
 import pl.routecost.user.UserRepository;
+import pl.routecost.AbstractIntegrationTest;
 
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -24,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = "routecost.jwt.secret-base64=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")
 @org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 @Transactional
-class VehicleIntegrationTests {
+class VehicleIntegrationTests extends AbstractIntegrationTest {
 
     private static final Pattern ID_PATTERN = Pattern.compile("\"id\":(\\d+)");
 

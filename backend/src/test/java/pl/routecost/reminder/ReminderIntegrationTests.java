@@ -39,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "routecost.reminders.publish-delay-ms=3600000"
 })
 @org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
-class ReminderIntegrationTests {
+class ReminderIntegrationTests extends pl.routecost.AbstractIntegrationTest {
 
     private static final Pattern ID_PATTERN = Pattern.compile("\"id\":(\\d+)");
     private final Map<String, Long> ownerIdsByToken = new HashMap<>();
@@ -79,6 +79,12 @@ class ReminderIntegrationTests {
 
     @Autowired
     private JwtService jwtService;
+
+    @org.junit.jupiter.api.AfterEach
+    void removeUsersCreatedByTest() {
+        userRepository.deleteAllById(ownerIdsByToken.values());
+        ownerIdsByToken.clear();
+    }
 
     @Test
     void createsFiltersTransitionsAndProtectsReminderCrud() throws Exception {

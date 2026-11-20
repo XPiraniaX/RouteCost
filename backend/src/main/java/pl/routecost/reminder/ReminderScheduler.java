@@ -1,9 +1,11 @@
 package pl.routecost.reminder;
 
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
+@Profile("!test")
 public class ReminderScheduler {
 
     private final ReminderNotificationService notificationService;

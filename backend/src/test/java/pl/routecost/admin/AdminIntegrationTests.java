@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import pl.routecost.expense.Expense;
+import pl.routecost.AbstractIntegrationTest;
 import pl.routecost.expense.ExpenseCategory;
 import pl.routecost.expense.ExpenseRepository;
 import pl.routecost.fuel.FuelEntry;
@@ -39,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = "routecost.jwt.secret-base64=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")
 @org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 @Transactional
-class AdminIntegrationTests {
+class AdminIntegrationTests extends AbstractIntegrationTest {
 
     private static final Pattern ACCESS_TOKEN = Pattern.compile("\"accessToken\":\"([^\"]+)\"");
 

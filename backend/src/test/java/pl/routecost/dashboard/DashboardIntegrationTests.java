@@ -6,6 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import pl.routecost.expense.Expense;
+import pl.routecost.AbstractIntegrationTest;
 import pl.routecost.expense.ExpenseCategory;
 import pl.routecost.expense.ExpenseRepository;
 import pl.routecost.fuel.FuelEntry;
@@ -35,7 +36,7 @@ import static org.hamcrest.Matchers.nullValue;
 @SpringBootTest(properties = "routecost.jwt.secret-base64=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")
 @org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 @Transactional
-class DashboardIntegrationTests {
+class DashboardIntegrationTests extends AbstractIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

@@ -6,6 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import pl.routecost.AbstractIntegrationTest;
 import pl.routecost.user.JwtService;
 import pl.routecost.user.User;
 import pl.routecost.user.UserRepository;
@@ -31,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = "routecost.jwt.secret-base64=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")
 @org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 @Transactional
-class FuelIntegrationTests {
+class FuelIntegrationTests extends AbstractIntegrationTest {
 
     private static final Pattern ID_PATTERN = Pattern.compile("\"id\":(\\d+)");
     private final Map<String, Long> ownerIdsByToken = new HashMap<>();

@@ -21,7 +21,6 @@ Aplikacja webowa do zarządzania pojazdami, rejestrowania kosztów ich eksploata
 - [Uruchomienie przez Docker Compose](#uruchomienie-przez-docker-compose)
 - [Zmienne środowiskowe](#zmienne-środowiskowe)
 - [Testy](#testy)
-- [Znane ograniczenia](#znane-ograniczenia)
 - [Dane demonstracyjne](#dane-demonstracyjne)
 
 ## O projekcie
@@ -201,100 +200,309 @@ Wartości w `errors` zależą od pola i naruszonego ograniczenia. Dla błędów 
 
 Do uruchomienia w kontenerach wymagane są Docker Engine/Desktop z Docker Compose oraz wolne porty `5432`, `5672`, `15672`, `8081` i `5174` (lub porty ustawione w `.env`). Aplikacja nie wymaga lokalnej instalacji Javy ani Node.js przy uruchomieniu Compose. Przy pracy bez kontenerów potrzebne są dodatkowo JDK 21, Node.js/npm, PostgreSQL 17 i RabbitMQ 4.
 
-## Uruchomienie przez Docker Compose
+## Uruchomienie aplikacji przez Docker Compose
 
-W katalogu głównym repozytorium utwórz lokalny plik `.env` na podstawie przykładu, a następnie uzupełnij wymagane sekrety:
+Poniższa instrukcja opisuje uruchomienie całego projektu RouteCost w środowisku lokalnym za pomocą Docker Compose. Nie trzeba osobno instalować ani konfigurować PostgreSQL, RabbitMQ, backendu ani frontendu — wszystkie usługi zostaną uruchomione w kontenerach.
+
+### Krok 1. Przygotowanie środowiska
+
+Przed rozpoczęciem upewnij się, że masz zainstalowane:
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) z obsługą Docker Compose,
+- Git — jeżeli pobierasz projekt bezpośrednio z repozytorium.
+
+Uruchom Docker Desktop i poczekaj, aż silnik Docker będzie gotowy.
+
+### Krok 2. Pobranie projektu i przejście do katalogu głównego
+
+Sklonuj repozytorium:
+
+```powershell
+git clone https://github.com/XPiraniaX/RouteCost.git
+```
+
+Przejdź do katalogu projektu:
+
+```powershell
+cd RouteCost
+```
+
+Wszystkie kolejne polecenia z tej instrukcji należy wykonywać w katalogu głównym repozytorium, w którym znajduje się plik `compose.yaml` lub `docker-compose.yml`.
+
+### Krok 3. Przygotowanie konfiguracji środowiskowej
+
+Utwórz lokalny plik `.env` na podstawie dostarczonego przykładu:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Wymagane do startu Compose są `DB_PASSWORD`, `RABBITMQ_PASSWORD` i `JWT_SECRET_BASE64`. Ustaw własne wartości zamiast przykładowych lokalnych haseł. Sekret JWT powinien być losowym kluczem zakodowanym Base64 o wystarczającej długości (co najmniej 256 bitów). Nie publikuj ani nie commituj `.env`.
+Otwórz plik `.env` w edytorze tekstu i uzupełnij wymagane wartości:
 
-Uruchom budowę obrazów i kontenery:
+- `DB_PASSWORD` — hasło użytkownika PostgreSQL,
+- `RABBITMQ_PASSWORD` — hasło użytkownika RabbitMQ,
+- `JWT_SECRET_BASE64` — sekret wykorzystywany do podpisywania tokenów JWT.
+
+Pozostałe ustawienia mogą pozostać domyślne, jeżeli nie ma potrzeby zmiany portów lub parametrów usług.
+
+Sekret JWT musi być losowym kluczem o długości co najmniej 256 bitów, zakodowanym w Base64. Można go wygenerować w PowerShell:
+
+```powershell
+$bytes = New-Object byte[] 32
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$rng.GetBytes($bytes)
+$secret = [Convert]::ToBase64String($bytes)
+$rng.Dispose()
+$secret
+```
+
+Wygenerowaną wartość skopiuj do `JWT_SECRET_BASE64` w pliku `.env`.
+
+**Ważne:** plik `.env` zawiera lokalne sekrety i nie powinien być publikowany ani dodawany do repozytorium Git. Nie należy również używać przykładowych haseł z `.env.example` jako haseł do rzeczywistego wdrożenia.
+
+### Krok 4. Budowanie obrazów i uruchomienie usług
+
+W katalogu głównym projektu wykonaj:
 
 ```powershell
 docker compose up --build -d
+```
+
+Polecenie zbuduje obrazy aplikacji, pobierze wymagane obrazy usług i uruchomi kontenery w tle.
+
+Pierwsze uruchomienie może potrwać kilka minut, ponieważ Docker musi pobrać zależności i zbudować backend oraz frontend.
+
+Sprawdź stan kontenerów:
+
+```powershell
 docker compose ps
 ```
 
-Adresy usług:
+Poczekaj, aż usługi zakończą inicjalizację. Sam fakt uruchomienia kontenera nie oznacza jeszcze, że aplikacja jest gotowa do obsługi żądań.
+
+### Krok 5. Sprawdzenie działania aplikacji
+
+Po uruchomieniu usług otwórz w przeglądarce:
 
 | Usługa | Adres |
 |---|---|
-| Frontend | http://localhost:5174 |
+| Frontend RouteCost | http://localhost:5174 |
 | Backend | http://localhost:8081 |
 | Swagger UI | http://localhost:8081/swagger-ui.html |
 | OpenAPI JSON | http://localhost:8081/v3/api-docs |
 | RabbitMQ Management | http://localhost:15672 |
-| PostgreSQL | `localhost:5432` |
-| RabbitMQ AMQP | `localhost:5672` |
 
-Porty frontend/backend można zmienić przez `FRONTEND_PORT` i `BACKEND_PORT`. Interfejs RabbitMQ Management używa danych ustawionych w `RABBITMQ_USERNAME` i `RABBITMQ_PASSWORD`.
+Dodatkowo usługi udostępniają porty:
 
-Logi wszystkich usług lub wybranej usługi:
+- PostgreSQL: `localhost:5432`
+- RabbitMQ AMQP: `localhost:5672`
+
+Panel RabbitMQ Management wymaga zalogowania danymi ustawionymi w `RABBITMQ_USERNAME` i `RABBITMQ_PASSWORD` w pliku `.env`.
+
+Przy pierwszym uruchomieniu backend automatycznie wykonuje migracje bazy danych za pomocą Flyway. Dopiero po zakończeniu inicjalizacji backendu można korzystać z funkcjonalności aplikacji.
+
+Aby sprawdzić, czy backend poprawnie wystartował, można również otworzyć Swagger UI i zweryfikować dostępność dokumentacji REST API.
+
+### Krok 6. Logi i diagnostyka
+
+Jeżeli aplikacja nie uruchomi się poprawnie, w pierwszej kolejności sprawdź stan kontenerów:
+
+```powershell
+docker compose ps
+```
+
+Wyświetlenie logów wszystkich usług:
 
 ```powershell
 docker compose logs -f
-docker compose logs -f backend
 ```
 
-Zatrzymanie kontenerów bez usuwania danych:
+Wyświetlenie logów wybranej usługi:
+
+```powershell
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f postgres
+docker compose logs -f rabbitmq
+```
+
+Logi backendu są szczególnie przydatne przy problemach z połączeniem z bazą danych, RabbitMQ, konfiguracją JWT lub migracjami Flyway.
+
+Aby zakończyć śledzenie logów, użyj `Ctrl+C`. Nie zatrzymuje to kontenerów.
+
+### Krok 7. Zatrzymanie aplikacji
+
+Aby zatrzymać wszystkie usługi bez usuwania zapisanych danych, wykonaj:
 
 ```powershell
 docker compose down
 ```
 
-`docker compose down -v` usuwa również wolumen `routecost_postgres_data` i zapisane w nim dane PostgreSQL. Używaj tego polecenia wyłącznie wtedy, gdy świadomie chcesz wyczyścić lokalną bazę.
+Przy kolejnym uruchomieniu wystarczy:
+
+```powershell
+docker compose up -d
+```
+
+Nie ma potrzeby ponownego budowania obrazów, o ile nie zmieniono kodu ani konfiguracji wymagającej przebudowania.
+
+Jeżeli zmieniono kod aplikacji i chcesz ponownie zbudować obrazy:
+
+```powershell
+docker compose up --build -d
+```
+
+**Uwaga dotycząca danych:** PostgreSQL przechowuje dane w wolumenie Docker `routecost_postgres_data`. Zwykłe `docker compose down` nie usuwa tego wolumenu, więc dane pozostają zachowane pomiędzy uruchomieniami.
+
+Polecenie:
+
+```powershell
+docker compose down -v
+```
+
+usuwa również wolumeny, w tym `routecost_postgres_data`, a tym samym wszystkie dane zapisane w lokalnej bazie PostgreSQL. Używaj go wyłącznie wtedy, gdy świadomie chcesz wyczyścić lokalne środowisko i rozpocząć pracę od pustej bazy.
+
+### Adresy i porty usług
+
+Domyślne porty publikowane na komputerze użytkownika:
+
+| Usługa | Port |
+|---|---:|
+| Frontend | `5174` |
+| Backend | `8081` |
+| PostgreSQL | `5432` |
+| RabbitMQ AMQP | `5672` |
+| RabbitMQ Management | `15672` |
+
+Porty frontend i backend można zmienić za pomocą zmiennych `FRONTEND_PORT` i `BACKEND_PORT` w pliku `.env`.
 
 ## Zmienne środowiskowe
 
-Pełna lista wartości opcjonalnych znajduje się w `.env.example`; Compose udostępnia następujące ustawienia:
+Konfiguracja aplikacji jest przekazywana za pomocą zmiennych środowiskowych. Przykładowe wartości i dostępne ustawienia znajdują się w pliku `.env.example`.
+
+Poniższa tabela przedstawia najważniejsze zmienne wykorzystywane przez Docker Compose:
 
 | Zmienna | Znaczenie |
 |---|---|
-| `DB_USERNAME`, `DB_PASSWORD` | Konto PostgreSQL; hasło jest wymagane. |
-| `RABBITMQ_USERNAME`, `RABBITMQ_PASSWORD` | Konto brokera; hasło jest wymagane. |
-| `JWT_SECRET_BASE64` | Sekret podpisujący JWT zakodowany w Base64; wymagany. |
-| `REFRESH_TOKEN_EXPIRATION` | Czas życia refresh tokenu, domyślnie `P7D`. |
-| `REFRESH_COOKIE_NAME`, `REFRESH_COOKIE_SECURE`, `REFRESH_COOKIE_SAME_SITE` | Nazwa i atrybuty cookie odświeżającego. `SameSite=None` wymaga `Secure=true`. |
-| `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD`, `INITIAL_ADMIN_FIRST_NAME`, `INITIAL_ADMIN_LAST_NAME` | Komplet danych początkowego administratora; opcjonalne wartości konfiguracyjne. |
-| `BACKEND_PORT`, `FRONTEND_PORT` | Porty publikowane na hoście; domyślnie `8081` i `5174`. |
-| `SPRING_PROFILES_ACTIVE` | Profil Springa; Compose domyślnie ustawia `dev`. |
+| `DB_USERNAME`, `DB_PASSWORD` | Dane logowania do PostgreSQL. |
+| `RABBITMQ_USERNAME`, `RABBITMQ_PASSWORD` | Dane logowania do RabbitMQ. |
+| `JWT_SECRET_BASE64` | Sekret wykorzystywany do podpisywania tokenów JWT, zakodowany w Base64. |
+| `REFRESH_TOKEN_EXPIRATION` | Czas ważności refresh tokenu; domyślnie `P7D`. |
+| `REFRESH_COOKIE_NAME`, `REFRESH_COOKIE_SECURE`, `REFRESH_COOKIE_SAME_SITE` | Nazwa i atrybuty cookie wykorzystywanego do odświeżania tokenu. `SameSite=None` wymaga `Secure=true`. |
+| `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD`, `INITIAL_ADMIN_FIRST_NAME`, `INITIAL_ADMIN_LAST_NAME` | Opcjonalne dane początkowego administratora. |
+| `BACKEND_PORT`, `FRONTEND_PORT` | Porty publikowane na hoście; domyślnie odpowiednio `8081` i `5174`. |
+| `SPRING_PROFILES_ACTIVE` | Aktywny profil Spring Boot; Compose domyślnie ustawia `dev`. |
 
-Wewnątrz Compose backend łączy się z usługami pod nazwami `postgres` i `rabbitmq`. Przy uruchomieniu backendu poza Compose można skonfigurować m.in. `DATABASE_URL`, `RABBITMQ_HOST` i `RABBITMQ_PORT`. Dla lokalnego HTTP ustawienie cookie domyślnie ma `Secure=false`; konfiguracja wdrożenia HTTPS powinna używać `Secure=true`.
+Wewnątrz sieci Docker Compose backend łączy się z PostgreSQL i RabbitMQ za pomocą nazw usług `postgres` i `rabbitmq`.
+
+Przy uruchamianiu backendu poza Docker Compose można dodatkowo skonfigurować m.in. `DATABASE_URL`, `RABBITMQ_HOST` i `RABBITMQ_PORT`.
+
+Dla lokalnego środowiska HTTP atrybut `Secure` cookie jest domyślnie wyłączony. W środowisku wdrożeniowym korzystającym z HTTPS należy odpowiednio skonfigurować `REFRESH_COOKIE_SECURE=true` oraz pozostałe atrybuty cookie.
+
+Szczegółowe wartości domyślne i pozostałe dostępne parametry należy sprawdzić w pliku `.env.example` oraz konfiguracji aplikacji.
 
 ## Testy
 
-Testy istnieją w repozytorium, ale w ramach przygotowania tej dokumentacji ich nie uruchamiano; poniższe polecenia opisują sposób uruchomienia, nie wynik.
+Projekt zawiera testy jednostkowe i integracyjne backendu oraz testy jednostkowe frontendu. Dodatkowo dostępne są narzędzia do analizy statycznej kodu i budowania wersji produkcyjnej.
 
-Backendowe testy JUnit i Spring Boot Test znajdują się w `backend/src/test/java`. Obejmują m.in. obliczenia spalania, statusy przypomnień, uwierzytelnianie, reguły domenowe i integracyjne testy API. Uruchomienie z katalogu głównego w PowerShell:
+### Wymagania środowiskowe
+
+Do uruchomienia pełnej weryfikacji projektu wymagane są:
+
+- JDK 21,
+- Maven Wrapper (dostarczony w repozytorium),
+- Node.js i npm,
+- Docker Desktop z działającym Docker Engine.
+
+Zależności frontendu należy wcześniej zainstalować za pomocą `npm ci`. Backend wykorzystuje Testcontainers, które automatycznie uruchamiają izolowane kontenery PostgreSQL 17 i RabbitMQ 4. Nie ma potrzeby ręcznego przygotowywania bazy danych ani brokera.
+
+### Weryfikacja całego projektu
+
+Najprostszym sposobem sprawdzenia poprawności projektu jest uruchomienie skryptu `test-all.ps1` z katalogu głównego repozytorium:
 
 ```powershell
-Push-Location backend
-.\mvnw.cmd test
-Pop-Location
+.\test-all.ps1
 ```
 
-Testy integracyjne korzystają z usług środowiskowych PostgreSQL i RabbitMQ skonfigurowanych dla backendu. Projekt nie konfiguruje Testcontainers, dlatego przygotuj odizolowane instancje testowe; nie kieruj testów do bazy ani brokera ze współdzielonymi danymi aplikacji.
+Skrypt kolejno:
+1. Sprawdza dostępność wymaganych narzędzi i środowiska.
+2. Uruchamia testy backendu.
+3. Uruchamia testy jednostkowe frontendu.
+4. Wykonuje analizę statyczną kodu (ESLint).
+5. Buduje produkcyjną wersję frontendu.
 
-Testy frontendu używają Vitest, jsdom i Testing Library. Pliki testowe `*.test.*` są umieszczone przy kodzie w `frontend/src`. W katalogu `frontend`:
+Wyniki poszczególnych etapów są prezentowane niezależnie. Niepowodzenie jednego etapu nie przerywa pozostałych. Skrypt zwraca kod wyjścia `0` wyłącznie wtedy, gdy wszystkie etapy zakończą się sukcesem.
+
+### Testy backendu
+
+Backend wykorzystuje JUnit 5, Spring Boot Test oraz Testcontainers. Testy znajdują się w katalogu `backend/src/test/java`.
+
+Zakres testów obejmuje między innymi:
+- obliczanie zużycia paliwa i kosztów eksploatacji;
+- walidację danych i reguły domenowe;
+- obsługę przypomnień i powiadomień;
+- uwierzytelnianie i autoryzację;
+- integracyjne testy REST API;
+- komunikację z RabbitMQ, przetwarzanie wiadomości i obsługę kolejki błędów (DLQ).
+
+**Samodzielne uruchomienie**
+
+Z katalogu `backend`:
+
+```powershell
+.\mvnw.cmd test
+```
+
+Podczas uruchamiania Testcontainers automatycznie przygotowuje tymczasowe środowisko testowe obejmujące PostgreSQL 17 i RabbitMQ 4. Kontenery są współdzielone przez testy integracyjne w ramach jednego uruchomienia Maven i sprzątane po zakończeniu testów.
+
+Migracje Flyway są wykonywane automatycznie na testowej bazie danych podczas inicjalizacji kontekstu Spring. Hibernate weryfikuje strukturę bazy za pomocą `ddl-auto=validate`. Profil `test` wyłącza seeder demonstracyjny oraz scheduler przypomnień, pozostawiając aktywną konfigurację RabbitMQ wymaganą przez testy integracyjne.
+
+Wyniki testów znajdują się w katalogu:
+
+`backend/target/surefire-reports/`
+
+### Testy frontendu
+
+Frontend wykorzystuje Vitest, jsdom i Testing Library. Pliki testowe `*.test.*` znajdują się w katalogu `frontend/src`, obok testowanego kodu.
+
+Zakres testów obejmuje między innymi:
+- routing i nawigację;
+- formularze i walidację;
+- komunikację z API;
+- widoki funkcjonalne;
+- narzędzia pomocnicze.
+
+**Instalacja zależności**
+
+Z katalogu `frontend`:
 
 ```powershell
 npm ci
-npm test
-npm run lint
-npm run build
 ```
 
-Testy obejmują m.in. routing, formularze i walidację, klient API, widoki funkcjonalne oraz narzędzia pomocnicze.
+**Samodzielne uruchomienie weryfikacji**
 
-## Znane ograniczenia
+```powershell
+npm run verify
+```
 
-- Testy integracyjne backendu nie korzystają z Testcontainers. Wymagają dostępnego PostgreSQL i RabbitMQ skonfigurowanych dla procesu testowego; do ich uruchamiania należy przygotować odizolowane usługi testowe.
-- PostgreSQL i RabbitMQ nie uczestniczą w jednej transakcji rozproszonej. Rekord outboxa, publisher confirms, ponawianie publikacji i idempotentny konsument ograniczają skutki awarii oraz duplikatów, ale nie zapewniają atomowego zatwierdzenia zmian w obu usługach.
-- Powiadomienia o przypomnieniach są zapisywane i udostępniane w aplikacji przez REST API. W repozytorium nie ma integracji wysyłającej e-mail ani powiadomienia push.
-- Repozytorium zawiera lokalny Docker Compose, a nie potwierdzone wdrożenie produkcyjne. Nie ma tu wyników wdrożenia ani jego monitoringu; uruchomienie Compose nie stanowi weryfikacji środowiska produkcyjnego.
+Polecenie uruchamia kolejno:
+1. Testy jednostkowe (Vitest).
+2. Analizę statyczną kodu (ESLint).
+3. Budowanie produkcyjne (Vite).
+
+Wszystkie etapy są wykonywane niezależnie, również w przypadku niepowodzenia wcześniejszego etapu. Skrypt zwraca niezerowy kod wyjścia, jeżeli którykolwiek z nich zakończy się błędem.
+
+Jeżeli polityka wykonywania skryptów PowerShell blokuje `npm.ps1`, można użyć równoważnego polecenia:
+
+```powershell
+npm.cmd run verify
+```
+
+### Dodatkowe informacje
+
+- Testy backendu i frontendu można uruchamiać niezależnie.
+- Testcontainers
 
 ## Dane demonstracyjne
 

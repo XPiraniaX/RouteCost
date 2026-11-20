@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(properties = "routecost.jwt.secret-base64=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")
-class RouteCostApplicationTests {
+class RouteCostApplicationTests extends AbstractIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;

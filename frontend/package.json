@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run",
+    "verify": "node ./scripts/verify.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -44,5 +45,8 @@
     "typescript-eslint": "^8.46.3",
     "vite": "^7.2.2",
     "vitest": "^3.2.4"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }
