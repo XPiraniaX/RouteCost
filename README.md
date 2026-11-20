@@ -17,11 +17,12 @@ Aplikacja webowa do zarządzania pojazdami, rejestrowania kosztów ich eksploata
 - [Asynchroniczne przypomnienia](#asynchroniczne-przypomnienia)
 - [REST API i Swagger](#rest-api-i-swagger)
 - [Wymagania środowiskowe](#wymagania-środowiskowe)
-- [Lokalne uruchomienie bez Dockera](#lokalne-uruchomienie-bez-dockera)
 - [Uruchomienie przez Docker Compose](#uruchomienie-przez-docker-compose)
 - [Zmienne środowiskowe](#zmienne-środowiskowe)
 - [Testy](#testy)
 - [Dane demonstracyjne](#dane-demonstracyjne)
+- [Video Demo](#video-demo)
+- [Spełnienie kryteriów projektowych](#spełnienie-kryteriów-projektowych)
 
 ## O projekcie
 
@@ -502,7 +503,7 @@ npm.cmd run verify
 ### Dodatkowe informacje
 
 - Testy backendu i frontendu można uruchamiać niezależnie.
-- Testcontainers
+- Testcontainers wymaga działającego Docker Engine.
 
 ## Dane demonstracyjne
 
@@ -530,3 +531,75 @@ docker compose up --build -d
 ```
 
 Przed kolejnym uruchomieniem developerskim przywróć profil `dev` albo usuń zmienną `SPRING_PROFILES_ACTIVE` z bieżącej sesji PowerShell. Samo zatrzymanie kontenerów nie usuwa bazy ani kont demonstracyjnych.
+
+## Video Demo
+
+Nagranie przedstawia demonstrację aplikacji RouteCost i jej najważniejszych funkcjonalności.
+
+[▶ Obejrzyj demonstrację RouteCost](docs/demo/Demo_RouteCost.mp4)
+
+## Spełnienie kryteriów projektowych
+
+### Ocena 3.0
+
+| Wymaganie | Sposób realizacji w RouteCost |
+|---|---|
+| Działający backend, REST API i połączenie z bazą danych | Backend oparty na Spring Boot udostępnia REST API. Dane aplikacji są trwale przechowywane w PostgreSQL 17. |
+| Minimum 3 encje i co najmniej jedna relacja | Model obejmuje m.in. `users`, `vehicles`, `fuel_entries`, `expenses` i `reminders`. Użytkownik posiada pojazdy, a pojazd grupuje tankowania, wydatki i przypomnienia. |
+| CRUD głównych zasobów | Aplikacja udostępnia operacje tworzenia, odczytu, edycji i usuwania pojazdów, tankowań, wydatków oraz przypomnień. |
+| Poprawne metody HTTP | API wykorzystuje m.in. `GET` do odczytu, `POST` do tworzenia, `PUT` do aktualizacji, `PATCH` do zmian częściowych i `DELETE` do usuwania zasobów. |
+| Podział na warstwy lub moduły | Backend jest podzielony na moduły domenowe. Obsługa żądań znajduje się w kontrolerach, logika w serwisach, a dostęp do danych w repozytoriach JPA. |
+| DTO oddzielające API od modelu bazy | Dane wejściowe i wyjściowe API są obsługiwane przez obiekty DTO, zamiast bezpośredniego udostępniania encji JPA. |
+| Walidacja danych wejściowych | Wykorzystywane są mechanizmy Bean Validation oraz dodatkowe walidacje reguł domenowych, np. dodatnie kwoty i poprawna chronologia przebiegu. |
+| Globalna obsługa błędów | Błędy walidacji i domenowe są obsługiwane centralnie przez `ApiExceptionHandler`, który zwraca odpowiednie kody HTTP i ustandaryzowane odpowiedzi. |
+| Co najmniej jedna własna reguła biznesowa | Przykładowo tankowania są kontrolowane pod kątem chronologii przebiegu, a spalanie jest obliczane pomiędzy kolejnymi pełnymi tankowaniami z uwzględnieniem tankowań pośrednich. |
+| Trwały zapis danych i poprawne kody HTTP | Dane są zapisywane w PostgreSQL. API zwraca kody odpowiednie do wyniku operacji, m.in. `400`, `404` i `409` dla błędów wejściowych, braku zasobu i konfliktów. |
+
+### Ocena 4.0
+| Wymaganie | Sposób realizacji w RouteCost |
+|---|---|
+| Uwierzytelnianie użytkowników | Rejestracja i logowanie wykorzystują hasła haszowane BCrypt oraz krótkotrwałe tokeny JWT. Sesja może być odtwarzana za pomocą rotowanego refresh tokenu przechowywanego w ciasteczku `HttpOnly`. |
+| Autoryzacja i minimum dwie role | Zaimplementowano role `USER` i `ADMIN`. Endpointy administracyjne `/api/admin/**` wymagają roli `ADMIN`. |
+| Ograniczenie dostępu do danych i endpointów | Operacje na pojazdach i zasobach z nimi powiązanych sprawdzają właściciela. Dostęp administracyjny jest dodatkowo kontrolowany na podstawie roli. |
+| Paginacja | Paginacja jest dostępna m.in. dla list pojazdów, tankowań, wydatków, przypomnień i powiadomień. |
+| Wyszukiwanie lub filtrowanie | Zaimplementowano filtrowanie danych, np. tankowań według rodzaju paliwa, wydatków według kategorii i dat oraz przypomnień według statusu. |
+| Dokumentacja REST API | Kontrakt API jest udostępniany przez Springdoc OpenAPI; interfejs Swagger UI znajduje się pod adresem `/swagger-ui.html`. |
+| Minimum 5 testów jednostkowych i 3 integracyjne REST API | Backend zawiera 27 testów jednostkowych/testów logiki serwisowej oraz 54 testy integracyjne. Testy integracyjne uruchamiają Spring i korzystają z PostgreSQL oraz RabbitMQ przez Testcontainers. |
+| Migracje schematu bazy danych | Flyway zarządza wersjonowanymi migracjami SQL od V1 do V8. |
+| Zarządzanie konfiguracją | Konfiguracja jest przekazywana przez zmienne środowiskowe i plik `.env`; `.env.example` zawiera wzór konfiguracji, a lokalny `.env` jest wykluczony z repozytorium. |
+| Brak sekretów w repozytorium | Hasła, lokalne dane dostępowe i sekret JWT są pobierane ze zmiennych środowiskowych. Plik `.env` nie jest śledzony przez Git. |
+| Oddzielenie logiki biznesowej od HTTP | Reguły domenowe i operacje na danych są realizowane w serwisach, niezależnie od kontrolerów obsługujących żądania HTTP. |
+
+### Ocena 5.0
+
+| Wymaganie | Sposób realizacji w RouteCost |
+|---|---|
+| Minimum 5 powiązanych encji tworzących model biznesowy | Model obejmuje osiem tabel: `users`, `vehicles`, `fuel_entries`, `expenses`, `reminders`, `reminder_notifications`, `refresh_tokens` i `user_notifications`. Tabele są powiązane relacjami odzwierciedlającymi użytkowników, pojazdy, sesje i obsługę przypomnień. |
+| Minimum 3 różne reguły biznesowe | Przykłady: kontrola chronologii przebiegu i dat tankowań; obliczanie spalania między pełnymi tankowaniami; kontrola własności pojazdów i zasobów zależnych; ochrona ostatniego aktywnego administratora przed odebraniem mu uprawnień. |
+| Frontend oparty na frameworku lub bibliotece | Interfejs użytkownika został wykonany w React 19 i TypeScript. |
+| Komunikacja frontendu z REST API | Frontend komunikuje się z backendem przez HTTP/JSON, wykorzystując klienta Axios i warstwę obsługi API. |
+| Logowanie i uwierzytelnianie po stronie frontendu | Interfejs obsługuje rejestrację, logowanie, odtwarzanie sesji, wylogowanie oraz dostęp do chronionych widoków. |
+| Listowanie, dodawanie, edycja i usuwanie danych | Użytkownik może zarządzać pojazdami, tankowaniami, wydatkami i przypomnieniami z poziomu interfejsu. |
+| Obsługa błędów API | Frontend obsługuje błędy odpowiedzi API i prezentuje komunikaty w widokach oraz formularzach. |
+| Mechanizm asynchroniczny | RabbitMQ obsługuje asynchroniczne przetwarzanie zdarzeń przypomnień. Zdarzenia są zapisywane w tabeli outbox, publikowane do kolejki, a następnie przetwarzane przez konsumenta. |
+| Testy najważniejszej logiki biznesowej | Testy backendu obejmują m.in. obliczenia spalania, walidację reguł domenowych, przypomnienia, powiadomienia, uwierzytelnianie i autoryzację. Frontend zawiera 146 testów. |
+| Docker Compose i osobne kontenery | `docker-compose.yml` uruchamia osobne usługi dla frontendu, backendu, PostgreSQL i RabbitMQ. |
+| README umożliwiający uruchomienie projektu | Dokument zawiera technologie, architekturę, model danych i ERD, wymagania środowiskowe, konfigurację zmiennych oraz instrukcję uruchomienia przez Docker Compose. |
+
+### Element rozszerzony
+
+W RouteCost zaimplementowano mechanizm automatycznych przypomnień serwisowych, wykorzystujący scheduler oraz RabbitMQ. Jego zadaniem jest wykrywanie zbliżających się i zaległych terminów oraz asynchroniczne dostarczanie powiadomień użytkownikom.
+
+1. **Scheduler** – komponent `ReminderScheduler` uruchamia się domyślnie co 60 sekund i wyszukuje aktywne przypomnienia z terminem w ciągu najbliższych 7 dni oraz przypomnienia zaległe.
+
+2. **Outbox** – wykryte zdarzenia są zapisywane w tabeli `reminder_notifications` ze statusem `PENDING`, zanim zostaną przekazane do RabbitMQ.
+
+3. **RabbitMQ** – publisher wysyła identyfikatory zdarzeń do kolejki `routecost.reminder.notifications.v2`, a po potwierdzeniu publikacji oznacza je jako `PUBLISHED`.
+
+4. **Konsument** – odbiera wiadomości, sprawdza aktualność przypomnienia i tworzy powiadomienia w tabeli `user_notifications`. Nieaktualne zdarzenia są odrzucane.
+
+5. **Obsługa błędów** – przetwarzanie jest idempotentne, a nieudane operacje są ponawiane maksymalnie trzy razy. Po wyczerpaniu prób wiadomość trafia do kolejki DLQ.
+
+6. **Interfejs użytkownika** – użytkownik może przeglądać powiadomienia, sprawdzać liczbę nieprzeczytanych oraz oznaczać je jako przeczytane.
+
+Mechanizm automatyzuje kontrolę terminów obsługi pojazdów i pozwala dostarczać powiadomienia w tle, bez konieczności ręcznego sprawdzania przypomnień.
